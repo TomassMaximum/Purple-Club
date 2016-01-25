@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentTransaction;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -17,6 +19,8 @@ import android.widget.TextView;
 
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    MenuItem navNewData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +37,18 @@ public class DrawerActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+//        navNewData = (MenuItem) findViewById(R.id.nav_new_data);
+
+        if (savedInstanceState == null) {
+            navigationView.setCheckedItem(R.id.nav_new_data);
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            NewsFragment fragment = new NewsFragment();
+            transaction.replace(R.id.content_fragment, fragment);
+            transaction.commit();
+        }
+
+//        getSupportFragmentManager().beginTransaction().add(R.id.drawer_layout,new NewsFragment()).commit();
 
     }
 
@@ -75,7 +91,11 @@ public class DrawerActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_new_data) {
-            // Handle the camera action
+            // 处理最新资讯选项，呈现fragment
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            NewsFragment fragment = new NewsFragment();
+            transaction.replace(R.id.content_fragment, fragment);
+            transaction.commit();
         } else if (id == R.id.nav_club_show) {
 
         } else if (id == R.id.nav_my_club) {
