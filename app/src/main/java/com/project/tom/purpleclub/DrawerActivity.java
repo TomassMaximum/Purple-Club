@@ -2,9 +2,12 @@ package com.project.tom.purpleclub;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -17,9 +20,21 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    public static final int REQUEST_CODE = 1;
+    private static final String TAG = "DrawerActivity";
+    String requestURL;
     MenuItem navNewData;
 
     @Override
@@ -38,8 +53,6 @@ public class DrawerActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-//        navNewData = (MenuItem) findViewById(R.id.nav_new_data);
-
         if (savedInstanceState == null) {
             navigationView.setCheckedItem(R.id.nav_new_data);
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -48,9 +61,8 @@ public class DrawerActivity extends AppCompatActivity
             transaction.commit();
         }
 
-//        getSupportFragmentManager().beginTransaction().add(R.id.drawer_layout,new NewsFragment()).commit();
-
     }
+
 
     @Override
     public void onBackPressed() {
@@ -90,6 +102,13 @@ public class DrawerActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
+        findViewById(R.id.text_press_to_sign_in).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+            }
+        });
+
         if (id == R.id.nav_new_data) {
             // 处理最新资讯选项，呈现fragment
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -113,12 +132,69 @@ public class DrawerActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
 
-        findViewById(R.id.text_press_to_sign_in).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(getBaseContext(),LoginActivity.class));
-            }
-        });
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.e(TAG, "onActivityResult被执行" + resultCode + "::" + RESULT_OK);
+        if(resultCode == RESULT_OK){
+            String url = data.getStringExtra("code");
+            requestURL = "https://dribbble.com/oauth/token?client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&client_secret=7260ba76972c21b693c6960d976f991454930ef19c69eb9e1ed944dee82a1feb" + url;
+
+            //调用方法来通过获取的code来请求Access Token用于调用Dribbble的api。
+            sendRequest();
+
+        }
+    }
+
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            String response = (String) msg.obj;
+            Log.e("Access Token",response);
+        }
+    };
+
+    public void sendRequest(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpURLConnection connection = null;
+                try {
+                    URL url = new URL("https://dribbble.com/oauth/token?");
+                    connection = (HttpURLConnection)url.openConnection();
+                    connection.setRequestMethod("POST");
+                    connection.setConnectTimeout(8000);
+                    connection.setReadTimeout(8000);
+                    DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                    out.writeBytes("client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&client_secret=7260ba76972c21b693c6960d976f991454930ef19c69eb9e1ed944dee82a1feb" + url);
+
+                    InputStream inputStream = connection.getInputStream();
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null){
+                        response.append(line);
+                    }
+                    if (response == null){
+                        Log.e(TAG,"response为空");
+                    }else{
+                        Log.e(TAG,response.toString());
+                    }
+
+                    Message message = new Message();
+                    message.obj = response.toString();
+                    handler.sendMessage(message);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }finally {
+                    if(connection != null){
+                        connection.disconnect();
+                    }
+                }
+            }
+        }).start();
     }
 }

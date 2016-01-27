@@ -25,13 +25,13 @@ public class NewsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.e(TAG,"fragment创建");
+
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.e(TAG,"Fragment被绘制");
+
         View rootView = inflater.inflate(R.layout.fragment_news,container,false);
 
         recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);

@@ -83,7 +83,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     }
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Log.e(TAG,"ViewHolder创建");
+
         return new RecyclerHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.fragment_recycler_item,parent,false));
     }
 
@@ -91,7 +91,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         RecyclerHolder recyclerHolder = (RecyclerHolder) holder;
 
-        Log.e(TAG, "ViewHolder绑定");
 
         //暂时没有bitmap，记得获取ImageView并set
 
@@ -106,6 +105,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
 
     @Override
     public int getItemCount() {
-        Log.e(TAG,"getItemCount被调用");
+;
         return viewNumber;    }
 }

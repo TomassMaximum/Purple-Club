@@ -1,24 +1,12 @@
 <resources>
-    <string name="app_name">Purple Club</string>
-    <string name="title_activity_drawer">紫社</string>
+    <string name="app_name">Nerd Pool</string>
+    <string name="title_activity_drawer">追否</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">设置</string>
     <string name="title_activity_login">注册/登录</string>
-
-    <!-- Strings related to login -->
-    <string name="prompt_email">邮箱</string>
-    <string name="prompt_password">密码</string>
-    <string name="action_sign_in">注册或登录</string>
-    <string name="action_sign_in_short">注册</string>
-    <string name="error_invalid_email">邮箱地址无效</string>
-    <string name="error_invalid_password">密码太短了</string>
-    <string name="error_incorrect_password">密码不正确</string>
-    <string name="error_field_required">此项是必须的</string>
-    <string name="permission_rationale">"需要联系人权限来自动填充邮箱地址"
-    </string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
