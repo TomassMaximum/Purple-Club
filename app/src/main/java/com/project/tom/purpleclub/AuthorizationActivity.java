@@ -2,15 +2,32 @@ package com.project.tom.purpleclub;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PersistableBundle;
+import android.preference.Preference;
+import android.support.annotation.Nullable;
+import android.support.v4.widget.ContentLoadingProgressBar;
 import android.util.Log;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -21,6 +38,8 @@ import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Tom on 2016/1/27.
@@ -28,29 +47,29 @@ import java.net.URL;
 public class AuthorizationActivity extends Activity {
 
     private static final String TAG = "AuthorizationActivity";
+    public static final String SHARED_PREFERENCE_KEY = "ACCESS_TOKEN";
     WebView webView;
-    TextView textView;
-    String url;
+    SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_authorization);
 
-        textView = (TextView) findViewById(R.id.text_view);
-
         webView = (WebView) findViewById(R.id.webView_authorization);
+
         webView.getSettings().setJavaScriptEnabled(true);
 
         //写一个自己的WebViewClient，当加载完成时调用finish关闭当前Activity
         webView.setWebViewClient(new MyWebViewClient(this));
-        webView.loadUrl("https://dribbble.com/oauth/authorize?client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&scope=public+write");
+        webView.loadUrl(GsonData.DRIBBBLE_GET_CODE_PARAM);
     }
 
     public static class MyWebViewClient extends WebViewClient{
 
         public String codeResult;
         AuthorizationActivity authorizationActivity;
+        String tokenJson;
 
         public MyWebViewClient(AuthorizationActivity authorizationActivity){
             this.authorizationActivity = authorizationActivity;
@@ -66,71 +85,48 @@ public class AuthorizationActivity extends Activity {
                 String[] urlParts = url.split("[?]");
                 codeResult = urlParts[1];
 
-                //调用方法获取到Access Token用于调用dribbble的API
-                getAccessToken();
+                //使用Volley库请求Access Token
+                RequestQueue requestQueue = Volley.newRequestQueue(authorizationActivity);
+                String tokenUrl = GsonData.DRIBBBLE_GET_ACCESS_TOKEN + codeResult;
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, tokenUrl, null,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                Log.e(TAG, "Json数据为：" + response);
+                                tokenJson = response.toString();
 
-                //获取到Access Token后关闭当前Activity
+                                //使用Gson对Json数据进行解析，取出Access Token用于调用API
+                                Gson gson = new Gson();
+                                GsonData gsonData = gson.fromJson(tokenJson, GsonData.class);
+                                String accessToken = gsonData.getAccessToken();
+                                Toast.makeText(authorizationActivity, "AccessToken为：" + accessToken, Toast.LENGTH_SHORT).show();
+
+                                authorizationActivity.sharedPreferences = authorizationActivity.getSharedPreferences("NerdPool", MODE_PRIVATE);
+                                SharedPreferences.Editor editor = authorizationActivity.sharedPreferences.edit();
+                                editor.putString(SHARED_PREFERENCE_KEY,accessToken);
+                                editor.apply();
+
+                                String pref = authorizationActivity.sharedPreferences.getString(SHARED_PREFERENCE_KEY,"默认值");
+                                Toast.makeText(authorizationActivity, "pref:" + pref, Toast.LENGTH_SHORT).show();
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Log.e(TAG,"授权失败");
+                            }
+                        }
+                );
+                requestQueue.add(jsonObjectRequest);
+
+                //获取到code并传递给Drawer Activity后关闭当前Activity
                 authorizationActivity.finish();
             }
         }
 
-        public void getAccessToken(){
-            //开启线程向dribbble获取Access Token.
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    HttpURLConnection connection;
-                    try {
-                        Log.e(TAG,"子线程开启");
-                        URL url = new URL("https://dribbble.com/oauth/token");
-                        connection = (HttpURLConnection) url.openConnection();
-                        connection.setRequestMethod("POST");
-//                        connection.setConnectTimeout(8000);
-//                        connection.setReadTimeout(8000);
-                        DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-                        out.writeBytes("client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&client_secret=7260ba76972c21b693c6960d976f991454930ef19c69eb9e1ed944dee82a1feb&" + codeResult);
-
-                        InputStream in = connection.getInputStream();
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                        StringBuilder builder = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null){
-                            builder.append(line);
-                        }
-
-                        //LOG输出检验
-                        Log.e(TAG,"成功获取到Access Token:" + builder.toString());
-
-                        //将结果存入Message并传给Handler处理
-                        Message message = new Message();
-                        message.obj = builder.toString();
-                        myHandler.sendMessage(message);
-
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
+        @Override
+        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+            Toast.makeText(authorizationActivity, "网页加载失败，再试一次呗", Toast.LENGTH_SHORT).show();
         }
-
-        private MyHandler myHandler = new MyHandler(this);
-
-        static class MyHandler extends Handler{
-            WeakReference<MyWebViewClient> mActivity;
-
-            MyHandler(MyWebViewClient myWebViewClient){
-                mActivity = new WeakReference<MyWebViewClient>(myWebViewClient);
-            }
-
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                String result = (String) msg.obj;
-                Log.e(TAG, "成功获取到Access Token:" + result);
-            }
-        }
-
     }
 }

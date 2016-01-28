@@ -1,9 +1,14 @@
 package com.project.tom.purpleclub;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentTransaction;
@@ -18,7 +23,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+
+import net.sectorsieteg.avatars.AvatarDrawableFactory;
+
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -32,10 +51,8 @@ import java.net.URL;
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    public static final int REQUEST_CODE = 1;
     private static final String TAG = "DrawerActivity";
-    String requestURL;
-    MenuItem navNewData;
+    SharedPreferences preferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +63,41 @@ public class DrawerActivity extends AppCompatActivity
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close){
+
+            //当用户点击特定项时，引导用户进行登录。
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                //将Dribbble默认头像Round获取圆形头像并取代丑陋的安卓小头
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inMutable = false;
+                Bitmap avatar = BitmapFactory.decodeResource(getResources(), R.drawable.dribbble_default_avatar, options);
+                AvatarDrawableFactory avatarFactory = new AvatarDrawableFactory(getResources());
+                Drawable avatarDrawable = avatarFactory.getSquaredAvatarDrawable(avatar, avatar);
+                ImageView avatarView = (ImageView)findViewById(R.id.user_avatar);
+                avatarView.setImageDrawable(avatarDrawable);
+
+                findViewById(R.id.text_press_to_sign_in).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                    }
+                });
+                findViewById(R.id.user_avatar).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                    }
+                });
+                findViewById(R.id.text_not_signed).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                    }
+                });
+            }
+        };
+
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
@@ -61,6 +112,35 @@ public class DrawerActivity extends AppCompatActivity
             transaction.commit();
         }
 
+        preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
+        String pref = preferences.getString(AuthorizationActivity.SHARED_PREFERENCE_KEY,"默认值");
+
+        //调用方法请求用户基本信息
+        getUserInfo(pref);
+
+        Toast.makeText(DrawerActivity.this, "preference:" + pref, Toast.LENGTH_SHORT).show();
+
+    }
+
+    public void getUserInfo(String accessToken){
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        String url = GsonData.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + GsonData.BUCKETS_ID + "?" + GsonData.ACCESS_TOKEN + accessToken;
+        Log.e(TAG,"URL:" + url);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.e(TAG,response.toString());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG,"请求出错");
+                    }
+                }
+        );
+        requestQueue.add(jsonObjectRequest);
     }
 
 
@@ -102,13 +182,6 @@ public class DrawerActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        findViewById(R.id.text_press_to_sign_in).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
-            }
-        });
-
         if (id == R.id.nav_new_data) {
             // 处理最新资讯选项，呈现fragment
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -133,68 +206,5 @@ public class DrawerActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
 
         return true;
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.e(TAG, "onActivityResult被执行" + resultCode + "::" + RESULT_OK);
-        if(resultCode == RESULT_OK){
-            String url = data.getStringExtra("code");
-            requestURL = "https://dribbble.com/oauth/token?client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&client_secret=7260ba76972c21b693c6960d976f991454930ef19c69eb9e1ed944dee82a1feb" + url;
-
-            //调用方法来通过获取的code来请求Access Token用于调用Dribbble的api。
-            sendRequest();
-
-        }
-    }
-
-    private Handler handler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            String response = (String) msg.obj;
-            Log.e("Access Token",response);
-        }
-    };
-
-    public void sendRequest(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                HttpURLConnection connection = null;
-                try {
-                    URL url = new URL("https://dribbble.com/oauth/token?");
-                    connection = (HttpURLConnection)url.openConnection();
-                    connection.setRequestMethod("POST");
-                    connection.setConnectTimeout(8000);
-                    connection.setReadTimeout(8000);
-                    DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-                    out.writeBytes("client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&client_secret=7260ba76972c21b693c6960d976f991454930ef19c69eb9e1ed944dee82a1feb" + url);
-
-                    InputStream inputStream = connection.getInputStream();
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null){
-                        response.append(line);
-                    }
-                    if (response == null){
-                        Log.e(TAG,"response为空");
-                    }else{
-                        Log.e(TAG,response.toString());
-                    }
-
-                    Message message = new Message();
-                    message.obj = response.toString();
-                    handler.sendMessage(message);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }finally {
-                    if(connection != null){
-                        connection.disconnect();
-                    }
-                }
-            }
-        }).start();
     }
 }
