@@ -27,7 +27,7 @@ public class SquareUtils {
         Rect scaledRect = new Rect(0, 0, newWidth, newHeight);
 
         Log.e("来自SquareUtils",Integer.toString(scaledRect.width()) + ":" + scaledRect.height());
-        Bitmap scaledBitmap = Bitmap.createBitmap(scaledRect.width(), scaledRect.height(), Config.ARGB_8888);
+        Bitmap scaledBitmap = Bitmap.createBitmap(49, scaledRect.height(), Config.ARGB_8888);
         Canvas canvas = new Canvas(scaledBitmap);
         canvas.drawBitmap(bitmap, bitmapRect, scaledRect, null);
 

@@ -2,18 +2,22 @@ package com.project.tom.purpleclub;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.SystemClock;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -33,26 +37,33 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.gson.Gson;
 
-import net.sectorsieteg.avatars.AvatarDrawableFactory;
-
+import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+import java.io.OutputStream;
+import java.net.URI;
 import java.net.URL;
+import java.util.concurrent.ExecutionException;
 
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "DrawerActivity";
     SharedPreferences preferences;
+    static String returnedResponse;
+
+    ImageView userAvatarImageView;
+    TextView userName;
+    TextView userDescription;
+
+    Boolean signedIn = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,41 +71,56 @@ public class DrawerActivity extends AppCompatActivity
         setContentView(R.layout.activity_drawer);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        //如果用户未登录，使用Access Token向Dribbble获取用户个人信息
+        preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
+        String pref = preferences.getString(AuthorizationActivity.SHARED_PREFERENCE_KEY,"");
+        getUserInfo(pref);
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close){
 
             //当用户点击特定项时，引导用户进行登录。
             @Override
             public void onDrawerOpened(View drawerView) {
-                //将Dribbble默认头像Round获取圆形头像并取代丑陋的安卓小头
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inMutable = false;
-                Bitmap avatar = BitmapFactory.decodeResource(getResources(), R.drawable.dribbble_default_avatar, options);
-                AvatarDrawableFactory avatarFactory = new AvatarDrawableFactory(getResources());
-                Drawable avatarDrawable = avatarFactory.getSquaredAvatarDrawable(avatar, avatar);
-                ImageView avatarView = (ImageView)findViewById(R.id.user_avatar);
-                avatarView.setImageDrawable(avatarDrawable);
+                //找到用户头像，用户ID，用户描述三个控件
+                userAvatarImageView = (ImageView) findViewById(R.id.user_avatar);
+                userName = (TextView) findViewById(R.id.text_not_signed);
+                userDescription = (TextView) findViewById(R.id.text_press_to_sign_in);
 
-                findViewById(R.id.text_press_to_sign_in).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
-                    }
-                });
-                findViewById(R.id.user_avatar).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
-                    }
-                });
-                findViewById(R.id.text_not_signed).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
-                    }
-                });
+                //如果用户未登录，显示Dribbble的默认头像，点击引导用户进入登录界面进行授权
+                if (!signedIn){
+                    Bitmap userAvatar = Utils.decodeBitmapFromSource(getResources(), R.drawable.dribbble_default_avatar, 35, 35);
+                    Bitmap roundedAvatar = getRoundedCornerBitmap(userAvatar);
+                    userAvatarImageView.setImageBitmap(roundedAvatar);
+
+                    userDescription.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                        }
+                    });
+                    userAvatarImageView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                        }
+                    });
+                    userName.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                        }
+                    });
+
+                    setUserInfo(returnedResponse);
+                }
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                super.onDrawerClosed(drawerView);
             }
         };
 
@@ -111,38 +137,7 @@ public class DrawerActivity extends AppCompatActivity
             transaction.replace(R.id.content_fragment, fragment);
             transaction.commit();
         }
-
-        preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
-        String pref = preferences.getString(AuthorizationActivity.SHARED_PREFERENCE_KEY,"默认值");
-
-        //调用方法请求用户基本信息
-        getUserInfo(pref);
-
-        Toast.makeText(DrawerActivity.this, "preference:" + pref, Toast.LENGTH_SHORT).show();
-
     }
-
-    public void getUserInfo(String accessToken){
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        String url = GsonData.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + GsonData.BUCKETS_ID + "?" + GsonData.ACCESS_TOKEN + accessToken;
-        Log.e(TAG,"URL:" + url);
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.e(TAG,response.toString());
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG,"请求出错");
-                    }
-                }
-        );
-        requestQueue.add(jsonObjectRequest);
-    }
-
 
     @Override
     public void onBackPressed() {
@@ -206,5 +201,122 @@ public class DrawerActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
 
         return true;
+    }
+
+    //获取圆角矩形头像
+    public static Bitmap getRoundedCornerBitmap(Bitmap bitmap) {
+        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
+                bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+
+        final int color = 0xff424242;
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+        final RectF rectF = new RectF(rect);
+        final float roundPx = 12;
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(color);
+        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
+
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+
+        return output;
+    }
+
+    public void setUserInfo(String response){
+        //获取用户个人信息Json数据成功，开始解析
+        if (response != null){
+            try {
+                JSONObject jsonObject = new JSONObject(response);
+                String name = jsonObject.getString("name");
+                String html = jsonObject.getString("html_url");
+                String avatar_url = jsonObject.getString("avatar_url");
+
+                //获取用户头像，保存至本地。
+                //如果url未变化，则无需再次请求，使用本地头像即可。否则，再次进行请求获取新头像。
+                preferences = getSharedPreferences("NerdPool",MODE_PRIVATE);
+                String localUrl = preferences.getString("user_avatar_url","");
+                if (!avatar_url.equals(localUrl)){
+                    //通过网络请求获取到头像
+                    DownloadImageTask downloadImageTask = new DownloadImageTask();
+                    Bitmap userAvatarBitmap = downloadImageTask.execute(avatar_url).get();
+                    Bitmap roundedAvatarBitmap = getRoundedCornerBitmap(userAvatarBitmap);
+                    userAvatarImageView.setImageBitmap(roundedAvatarBitmap);
+
+                    //将新的url保存至SharedPreference
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString("user_avatar_url",avatar_url);
+                    editor.apply();
+
+                    //将用户当前头像保存至本地
+                    String path = Environment.getExternalStorageDirectory().toString();
+                    OutputStream out = null;
+                    File file = new File(path,"user_avatar.jpg");
+                    out = new FileOutputStream(file);
+
+                    roundedAvatarBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+                    out.flush();
+                    out.close();
+
+                    String avatarLocalUrl = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
+                    editor.putString("avatarLocalUrl",avatarLocalUrl);
+                    editor.apply();
+                    Log.e(TAG,"Local URL" + avatarLocalUrl);
+                }else {
+                    //如果URL未变，则直接使用本地存储的头像。
+                    String avatarLocalUrl = preferences.getString("avatarLocalUrl", "");
+                    Uri avatarUri = Uri.parse(avatarLocalUrl);
+                    Bitmap localAvatar = MediaStore.Images.Media.getBitmap(getContentResolver(),avatarUri);
+                    userAvatarImageView.setImageBitmap(localAvatar);
+                }
+
+                userName.setText(name);
+                userDescription.setText(html);
+                signedIn = true;
+            } catch (JSONException | InterruptedException | ExecutionException | IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void getUserInfo(String accessToken){
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        String url = GsonData.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + "?" + GsonData.ACCESS_TOKEN + accessToken;
+        Log.e(TAG,"URL:" + url);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.e(TAG,response.toString());
+                        returnedResponse = response.toString();
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG,"请求出错");
+                        Toast.makeText(DrawerActivity.this, "获取用户信息失败", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+        requestQueue.add(jsonObjectRequest);
+    }
+
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
     }
 }

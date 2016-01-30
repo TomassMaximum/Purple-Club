@@ -43,7 +43,7 @@ public class SquareCanvas {
 
     public void drawBitmapLeft(Bitmap bitmap) {
         Log.e("来自SquareCanvas:",getNewWidth() + ":" + Integer.toString(mCanvas.getHeight()));
-        Bitmap scaledBitmap = mSquareUtils.createScaledBitmap(bitmap, getNewWidth(), mCanvas.getHeight());
+        Bitmap scaledBitmap = mSquareUtils.createScaledBitmap(bitmap, 49, mCanvas.getHeight());
         mCanvas.drawBitmap(scaledBitmap, 0f, 0f, null);
         scaledBitmap.recycle();
     }

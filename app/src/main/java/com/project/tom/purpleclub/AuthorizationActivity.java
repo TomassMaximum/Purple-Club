@@ -1,22 +1,13 @@
 package com.project.tom.purpleclub;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.PersistableBundle;
-import android.preference.Preference;
-import android.support.annotation.Nullable;
-import android.support.v4.widget.ContentLoadingProgressBar;
 import android.util.Log;
-import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -28,18 +19,6 @@ import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 
 import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by Tom on 2016/1/27.
@@ -99,7 +78,6 @@ public class AuthorizationActivity extends Activity {
                                 Gson gson = new Gson();
                                 GsonData gsonData = gson.fromJson(tokenJson, GsonData.class);
                                 String accessToken = gsonData.getAccessToken();
-                                Toast.makeText(authorizationActivity, "AccessToken为：" + accessToken, Toast.LENGTH_SHORT).show();
 
                                 authorizationActivity.sharedPreferences = authorizationActivity.getSharedPreferences("NerdPool", MODE_PRIVATE);
                                 SharedPreferences.Editor editor = authorizationActivity.sharedPreferences.edit();
@@ -107,7 +85,6 @@ public class AuthorizationActivity extends Activity {
                                 editor.apply();
 
                                 String pref = authorizationActivity.sharedPreferences.getString(SHARED_PREFERENCE_KEY,"默认值");
-                                Toast.makeText(authorizationActivity, "pref:" + pref, Toast.LENGTH_SHORT).show();
                             }
                         },
                         new Response.ErrorListener() {
