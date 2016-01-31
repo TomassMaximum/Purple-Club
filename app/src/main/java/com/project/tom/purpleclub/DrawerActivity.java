@@ -2,7 +2,6 @@ package com.project.tom.purpleclub;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -16,17 +15,17 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.app.FragmentTransaction;
-import android.util.Log;
-import android.view.View;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,14 +41,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
 public class DrawerActivity extends AppCompatActivity
@@ -58,12 +54,11 @@ public class DrawerActivity extends AppCompatActivity
     private static final String TAG = "DrawerActivity";
     SharedPreferences preferences;
     static String returnedResponse;
+    RoundImage roundImage;
 
     ImageView userAvatarImageView;
     TextView userName;
     TextView userDescription;
-
-    Boolean signedIn = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,27 +68,32 @@ public class DrawerActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
-        //如果用户未登录，使用Access Token向Dribbble获取用户个人信息
-        preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
-        String pref = preferences.getString(AuthorizationActivity.SHARED_PREFERENCE_KEY,"");
-        getUserInfo(pref);
-
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close){
 
             //当用户点击特定项时，引导用户进行登录。
             @Override
             public void onDrawerOpened(View drawerView) {
+                //如果用户未登录，使用Access Token向Dribbble获取用户个人信息
+                preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
+                String pref = preferences.getString(AuthorizationActivity.SHARED_PREFERENCE_KEY,"");
+                getUserInfo(pref);
+
                 //找到用户头像，用户ID，用户描述三个控件
                 userAvatarImageView = (ImageView) findViewById(R.id.user_avatar);
                 userName = (TextView) findViewById(R.id.text_not_signed);
                 userDescription = (TextView) findViewById(R.id.text_press_to_sign_in);
 
                 //如果用户未登录，显示Dribbble的默认头像，点击引导用户进入登录界面进行授权
+                preferences = getSharedPreferences("NerdPool",MODE_PRIVATE);
+                Boolean signedIn = preferences.getBoolean("SignedIn",false);
                 if (!signedIn){
-                    Bitmap userAvatar = Utils.decodeBitmapFromSource(getResources(), R.drawable.dribbble_default_avatar, 35, 35);
-                    Bitmap roundedAvatar = getRoundedCornerBitmap(userAvatar);
-                    userAvatarImageView.setImageBitmap(roundedAvatar);
+                    Bitmap userAvatar = Utils.getResizedBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.dribbble_default_avatar),180,180);
+
+                    roundImage = new RoundImage(userAvatar);
+                    userAvatarImageView.setImageDrawable(roundImage);
+
+                    //userAvatarImageView.setImageBitmap(roundedAvatar);
 
                     userDescription.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -115,6 +115,26 @@ public class DrawerActivity extends AppCompatActivity
                     });
 
                     setUserInfo(returnedResponse);
+                }else {
+                    String name = preferences.getString("name","");
+                    String html = preferences.getString("html","");
+                    userName.setText(name);
+                    userDescription.setText(html);
+                    setLocalAvatar();
+
+                    userAvatarImageView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            startActivity(new Intent(DrawerActivity.this, PersonalInfoActivity.class));
+                        }
+                    });
+
+                    userName.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            startActivity(new Intent(DrawerActivity.this,PersonalInfoActivity.class));
+                        }
+                    });
                 }
             }
 
@@ -204,27 +224,27 @@ public class DrawerActivity extends AppCompatActivity
     }
 
     //获取圆角矩形头像
-    public static Bitmap getRoundedCornerBitmap(Bitmap bitmap) {
-        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
-                bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(output);
-
-        final int color = 0xff424242;
-        final Paint paint = new Paint();
-        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
-        final RectF rectF = new RectF(rect);
-        final float roundPx = 12;
-
-        paint.setAntiAlias(true);
-        canvas.drawARGB(0, 0, 0, 0);
-        paint.setColor(color);
-        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
-
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-        canvas.drawBitmap(bitmap, rect, rect, paint);
-
-        return output;
-    }
+//    public static Bitmap getRoundedCornerBitmap(Bitmap bitmap) {
+//        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
+//                bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+//        Canvas canvas = new Canvas(output);
+//
+//        final int color = 0xff424242;
+//        final Paint paint = new Paint();
+//        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+//        final RectF rectF = new RectF(rect);
+//        final float roundPx = 12;
+//
+//        paint.setAntiAlias(true);
+//        canvas.drawARGB(0, 0, 0, 0);
+//        paint.setColor(color);
+//        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
+//
+//        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+//        canvas.drawBitmap(bitmap, rect, rect, paint);
+//
+//        return output;
+//    }
 
     public void setUserInfo(String response){
         //获取用户个人信息Json数据成功，开始解析
@@ -243,43 +263,41 @@ public class DrawerActivity extends AppCompatActivity
                     //通过网络请求获取到头像
                     DownloadImageTask downloadImageTask = new DownloadImageTask();
                     Bitmap userAvatarBitmap = downloadImageTask.execute(avatar_url).get();
-                    Bitmap roundedAvatarBitmap = getRoundedCornerBitmap(userAvatarBitmap);
+                    Bitmap roundedAvatarBitmap = Utils.getResizedBitmap(userAvatarBitmap,180,180);
                     userAvatarImageView.setImageBitmap(roundedAvatarBitmap);
 
                     //将新的url保存至SharedPreference
                     SharedPreferences.Editor editor = preferences.edit();
                     editor.putString("user_avatar_url",avatar_url);
+                    editor.putString("name",name);
+                    editor.putString("html",html);
                     editor.apply();
 
-                    //将用户当前头像保存至本地
-                    String path = Environment.getExternalStorageDirectory().toString();
-                    OutputStream out = null;
-                    File file = new File(path,"user_avatar.jpg");
-                    out = new FileOutputStream(file);
-
-                    roundedAvatarBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-                    out.flush();
-                    out.close();
-
-                    String avatarLocalUrl = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
-                    editor.putString("avatarLocalUrl",avatarLocalUrl);
-                    editor.apply();
-                    Log.e(TAG,"Local URL" + avatarLocalUrl);
+                    new SaveAvatarToLocalTask().execute(roundedAvatarBitmap);
                 }else {
                     //如果URL未变，则直接使用本地存储的头像。
-                    String avatarLocalUrl = preferences.getString("avatarLocalUrl", "");
-                    Uri avatarUri = Uri.parse(avatarLocalUrl);
-                    Bitmap localAvatar = MediaStore.Images.Media.getBitmap(getContentResolver(),avatarUri);
-                    userAvatarImageView.setImageBitmap(localAvatar);
+                    setLocalAvatar();
                 }
 
                 userName.setText(name);
                 userDescription.setText(html);
-                signedIn = true;
-            } catch (JSONException | InterruptedException | ExecutionException | IOException e) {
+            } catch (JSONException | InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void setLocalAvatar(){
+        String avatarLocalUrl = preferences.getString("avatarLocalUrl", "");
+        Uri avatarUri = Uri.parse(avatarLocalUrl);
+        Bitmap localAvatar = null;
+        try {
+            localAvatar = MediaStore.Images.Media.getBitmap(getContentResolver(),avatarUri);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        roundImage = new RoundImage(localAvatar);
+        userAvatarImageView.setImageDrawable(roundImage);
     }
 
     public void getUserInfo(String accessToken){
@@ -305,8 +323,40 @@ public class DrawerActivity extends AppCompatActivity
         requestQueue.add(jsonObjectRequest);
     }
 
+    private class SaveAvatarToLocalTask extends AsyncTask<Bitmap,Void,Void>{
+
+        @Override
+        protected Void doInBackground(Bitmap... params) {
+            Bitmap avatarBitmap = params[0];
+            SharedPreferences.Editor editor = preferences.edit();
+
+            //将用户当前头像保存至本地
+            String path = Environment.getExternalStorageDirectory().toString();
+            OutputStream out = null;
+            File file = new File(path,"user_avatar.jpg");
+            try {
+                out = new FileOutputStream(file);
+                avatarBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+                out.flush();
+                out.close();
+                String avatarLocalUrl = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
+                //存入当前头像URL地址,用户名,个人主页地址
+                editor.putString("avatarLocalUrl", avatarLocalUrl);
+
+                //将用户已登录信息存入SharedPreferences
+                editor.putBoolean("SignedIn", true);
+                editor.apply();
+                Log.e(TAG, "Local URL" + avatarLocalUrl);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         protected Bitmap doInBackground(String... urls) {
+            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
             String urldisplay = urls[0];
             Bitmap mIcon11 = null;
             try {
