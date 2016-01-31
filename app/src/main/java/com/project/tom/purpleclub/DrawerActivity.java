@@ -93,8 +93,6 @@ public class DrawerActivity extends AppCompatActivity
                     roundImage = new RoundImage(userAvatar);
                     userAvatarImageView.setImageDrawable(roundImage);
 
-                    //userAvatarImageView.setImageBitmap(roundedAvatar);
-
                     userDescription.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -114,10 +112,12 @@ public class DrawerActivity extends AppCompatActivity
                         }
                     });
 
-                    setUserInfo(returnedResponse);
+                    if(!returnedResponse.equals("")){
+                        setUserInfo(returnedResponse);
+                    }
                 }else {
-                    String name = preferences.getString("name","");
-                    String html = preferences.getString("html","");
+                    String name = preferences.getString("username","");
+                    String html = preferences.getString("html_url","");
                     userName.setText(name);
                     userDescription.setText(html);
                     setLocalAvatar();
@@ -252,8 +252,28 @@ public class DrawerActivity extends AppCompatActivity
             try {
                 JSONObject jsonObject = new JSONObject(response);
                 String name = jsonObject.getString("name");
-                String html = jsonObject.getString("html_url");
+                String html_url = jsonObject.getString("html_url");
                 String avatar_url = jsonObject.getString("avatar_url");
+                String id = jsonObject.getString("id");
+                String username = jsonObject.getString("username");
+                String bio = jsonObject.getString("bio");
+                String location = jsonObject.getString("location");
+                String buckets_count = jsonObject.getString("buckets_count");
+                String comments_received_count = jsonObject.getString("comments_received_count");
+                String followers_count = jsonObject.getString("followers_count");
+                String followings_count = jsonObject.getString("followings_count");
+                String likes_count = jsonObject.getString("likes_count");
+                String likes_received_count = jsonObject.getString("likes_received_count");
+                String projects_count = jsonObject.getString("projects_count");
+                String rebounds_received_count = jsonObject.getString("rebounds_received_count");
+                String shots_count = jsonObject.getString("shots_count");
+                String teams_count = jsonObject.getString("teams_count");
+                String can_upload_shot = jsonObject.getString("can_upload_shot");
+                String type = jsonObject.getString("type");
+                String pro = jsonObject.getString("pro");
+                JSONObject linksObject = jsonObject.getJSONObject("links");
+                String web = linksObject.getString("web");
+                String twitter = linksObject.getString("twitter");
 
                 //获取用户头像，保存至本地。
                 //如果url未变化，则无需再次请求，使用本地头像即可。否则，再次进行请求获取新头像。
@@ -270,7 +290,26 @@ public class DrawerActivity extends AppCompatActivity
                     SharedPreferences.Editor editor = preferences.edit();
                     editor.putString("user_avatar_url",avatar_url);
                     editor.putString("name",name);
-                    editor.putString("html",html);
+                    editor.putString("html_url",html_url);
+                    editor.putString("id",id);
+                    editor.putString("username",username);
+                    editor.putString("bio",bio);
+                    editor.putString("location",location);
+                    editor.putString("buckets_count",buckets_count);
+                    editor.putString("comments_received_count",comments_received_count);
+                    editor.putString("followers_count",followers_count);
+                    editor.putString("followings_count",followings_count);
+                    editor.putString("likes_count",likes_count);
+                    editor.putString("likes_received_count",likes_received_count);
+                    editor.putString("projects_count",projects_count);
+                    editor.putString("rebounds_received_count",rebounds_received_count);
+                    editor.putString("shots_count",shots_count);
+                    editor.putString("teams_count",teams_count);
+                    editor.putString("can_upload_shot",can_upload_shot);
+                    editor.putString("type",type);
+                    editor.putString("pro",pro);
+                    editor.putString("web",web);
+                    editor.putString("twitter",twitter);
                     editor.apply();
 
                     new SaveAvatarToLocalTask().execute(roundedAvatarBitmap);
@@ -280,7 +319,7 @@ public class DrawerActivity extends AppCompatActivity
                 }
 
                 userName.setText(name);
-                userDescription.setText(html);
+                userDescription.setText(html_url);
             } catch (JSONException | InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
