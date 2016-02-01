@@ -13,8 +13,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import junit.framework.TestCase;
-
 import java.io.IOException;
 
 public class PersonalInfoActivity extends AppCompatActivity {

@@ -6,15 +6,11 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.os.Binder;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -28,11 +24,8 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Tom on 2016/2/1.
@@ -180,36 +173,6 @@ public class RequestService extends Service {
                 e.printStackTrace();
             }
             return mIcon11;
-        }
-    }
-
-    private class SaveAvatarToLocalTask extends AsyncTask<Bitmap,Void,Void>{
-
-        @Override
-        protected Void doInBackground(Bitmap... params) {
-            Bitmap avatarBitmap = params[0];
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-
-            //将用户当前头像保存至本地
-            String path = Environment.getExternalStorageDirectory().toString();
-            OutputStream out = null;
-            File file = new File(path,"user_avatar.jpg");
-            try {
-                out = new FileOutputStream(file);
-                avatarBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-                out.flush();
-                out.close();
-                String avatarLocalUrl = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
-                //存入当前头像URL地址,用户名,个人主页地址
-                editor.putString("avatarLocalUrl", avatarLocalUrl);
-
-                //将用户已登录信息存入SharedPreferences
-                editor.putBoolean("SignedIn", true);
-                editor.apply();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
         }
     }
 }

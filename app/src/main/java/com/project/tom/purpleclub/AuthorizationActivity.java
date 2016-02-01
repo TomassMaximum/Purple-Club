@@ -1,8 +1,8 @@
 package com.project.tom.purpleclub;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebResourceError;
@@ -27,9 +27,8 @@ import org.json.JSONObject;
 public class AuthorizationActivity extends Activity {
 
     private static final String TAG = "AuthorizationActivity";
-    public static final String SHARED_PREFERENCE_KEY = "ACCESS_TOKEN";
     WebView webView;
-    SharedPreferences sharedPreferences;
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +39,29 @@ public class AuthorizationActivity extends Activity {
 
         webView.getSettings().setJavaScriptEnabled(true);
 
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setTitle("正在转到登录界面");
+        progressDialog.setMessage("加载中...");
+        progressDialog.setCancelable(true);
+        progressDialog.show();
+
         //写一个自己的WebViewClient，当加载完成时调用finish关闭当前Activity
         webView.setWebViewClient(new MyWebViewClient(this));
         webView.loadUrl(GsonData.DRIBBBLE_GET_CODE_PARAM);
+
+        new Thread(){
+            public void run()
+            {
+                try {
+                    sleep(5000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                finally{
+                    progressDialog.dismiss();
+                }
+            }
+        }.start();
     }
 
     public static class MyWebViewClient extends WebViewClient{
@@ -57,9 +76,11 @@ public class AuthorizationActivity extends Activity {
 
         @Override
         public void onPageFinished(WebView view, String url) {
-            super.onPageFinished(view, url);
-            if (url.contains("code")){
+            if (authorizationActivity.progressDialog.isShowing()){
+                authorizationActivity.progressDialog.dismiss();
+            }
 
+            if (url.contains("code")){
                 //获取到返回url的"code"部分
                 String[] urlParts = url.split("[?]");
                 codeResult = urlParts[1];
@@ -81,6 +102,7 @@ public class AuthorizationActivity extends Activity {
                                 //开启一个服务用于在此Activity结束后继续向Dribbble获取用户个人信息
                                 Intent intent = new Intent(authorizationActivity,RequestService.class);
                                 intent.putExtra("access_token",accessToken);
+                                Log.e(TAG,accessToken);
                                 authorizationActivity.startService(intent);
 
                             }
