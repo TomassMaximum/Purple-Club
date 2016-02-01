@@ -59,7 +59,6 @@ public class AuthorizationActivity extends Activity {
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             if (url.contains("code")){
-                Log.e(TAG,"返回code成功" + url);
 
                 //获取到返回url的"code"部分
                 String[] urlParts = url.split("[?]");
@@ -72,7 +71,6 @@ public class AuthorizationActivity extends Activity {
                         new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response) {
-                                Log.e(TAG, "Json数据为：" + response);
                                 tokenJson = response.toString();
 
                                 //使用Gson对Json数据进行解析，取出Access Token用于调用API
@@ -96,6 +94,9 @@ public class AuthorizationActivity extends Activity {
                 );
                 requestQueue.add(jsonObjectRequest);
 
+                //解决方案一：finish自己之前先开启Drawer Activity，但是要把模式改为SingleTop
+//                Intent intent = new Intent(authorizationActivity,DrawerActivity.class);
+//                authorizationActivity.startActivity(intent);
                 //获取到code并传递给Drawer Activity后关闭当前Activity
                 authorizationActivity.finish();
             }

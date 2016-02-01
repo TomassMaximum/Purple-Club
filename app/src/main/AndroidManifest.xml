@@ -28,6 +28,8 @@
             android:name=".PersonalInfoActivity"
             android:label="个人信息"
             android:theme="@style/AppTheme.NoActionBar"/>
+
+        <service android:name=".RequestService"/>
     </application>
 
 </manifest>

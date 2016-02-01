@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Binder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -30,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -39,6 +41,7 @@ public class RequestService extends Service {
 
     public static final String TAG = "RequestService";
     String returnedResponse;
+    String localAvatarUrl;
     SharedPreferences sharedPreferences;
 
     @Nullable
@@ -48,12 +51,16 @@ public class RequestService extends Service {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String access_token = intent.getStringExtra("access_token");
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         String url = GsonData.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + "?" + GsonData.ACCESS_TOKEN + access_token;
-        Log.e(TAG, "URL:" + url);
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
                     @Override
@@ -95,11 +102,17 @@ public class RequestService extends Service {
                             String localUrl = sharedPreferences.getString("user_avatar_url","");
                             if (!avatar_url.equals(localUrl)) {
                                 //通过网络请求获取到头像
-                                Bitmap userAvatarBitmap = new DownloadImageTask().execute(avatar_url).get();
-                                new SaveAvatarToLocalTask().execute(userAvatarBitmap);
+                                new DownloadImageTask().execute(avatar_url);
+
+                                //存入当前头像URL地址,用户名,个人主页地址
+                                SharedPreferences.Editor editor = sharedPreferences.edit();
+                                editor.putString("avatarLocalUrl", localUrl);
+
+                                //将用户已登录信息存入SharedPreferences
+                                editor.putBoolean("SignedIn", true);
+
 
                                 //将新的url保存至SharedPreference
-                                SharedPreferences.Editor editor = sharedPreferences.edit();
                                 editor.putString("user_avatar_url", avatar_url);
                                 editor.putString("name", name);
                                 editor.putString("html_url", html_url);
@@ -124,7 +137,7 @@ public class RequestService extends Service {
                                 editor.putString("twitter", twitter);
                                 editor.apply();
                             }
-                        } catch (JSONException | InterruptedException | ExecutionException e) {
+                        } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     }
@@ -137,6 +150,7 @@ public class RequestService extends Service {
                 }
         );
         requestQueue.add(jsonObjectRequest);
+        stopSelf();
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -149,6 +163,18 @@ public class RequestService extends Service {
             try {
                 InputStream in = new java.net.URL(urldisplay).openStream();
                 mIcon11 = BitmapFactory.decodeStream(in);
+
+                String path = Environment.getExternalStorageDirectory().toString();
+                OutputStream out;
+                File file = new File(path,"user_avatar.jpg");
+                out = new FileOutputStream(file);
+                mIcon11.compress(Bitmap.CompressFormat.JPEG, 100, out);
+                out.flush();
+                out.close();
+                localAvatarUrl = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString("avatarLocalUrl", localAvatarUrl);
+                editor.apply();
             } catch (Exception e) {
                 Log.e("Error", e.getMessage());
                 e.printStackTrace();
@@ -180,7 +206,6 @@ public class RequestService extends Service {
                 //将用户已登录信息存入SharedPreferences
                 editor.putBoolean("SignedIn", true);
                 editor.apply();
-                Log.e(TAG, "Local URL" + avatarLocalUrl);
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -117,18 +117,21 @@ public class DrawerActivity extends AppCompatActivity
                     userDescription.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            onBackPressed();
                             startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
                         }
                     });
                     userAvatarImageView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            onBackPressed();
                             startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
                         }
                     });
                     userName.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            onBackPressed();
                             startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
                         }
                     });
@@ -159,6 +162,16 @@ public class DrawerActivity extends AppCompatActivity
                         @Override
                         public void onClick(View v) {
                             startActivity(new Intent(DrawerActivity.this,PersonalInfoActivity.class));
+                        }
+                    });
+
+                    userDescription.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            String html_url = preferences.getString("html_url","");
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            intent.setData(Uri.parse(html_url));
+                            startActivity(intent);
                         }
                     });
                 }
@@ -258,6 +271,8 @@ public class DrawerActivity extends AppCompatActivity
         } catch (IOException e) {
             e.printStackTrace();
         }
-        roundImage = new RoundImage(localAvatar);
+        if (localAvatar != null){
+            roundImage = new RoundImage(localAvatar);
+        }
     }
 }
