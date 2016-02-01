@@ -1,6 +1,7 @@
 package com.project.tom.purpleclub;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -79,12 +80,11 @@ public class AuthorizationActivity extends Activity {
                                 GsonData gsonData = gson.fromJson(tokenJson, GsonData.class);
                                 String accessToken = gsonData.getAccessToken();
 
-                                authorizationActivity.sharedPreferences = authorizationActivity.getSharedPreferences("NerdPool", MODE_PRIVATE);
-                                SharedPreferences.Editor editor = authorizationActivity.sharedPreferences.edit();
-                                editor.putString(SHARED_PREFERENCE_KEY,accessToken);
-                                editor.apply();
+                                //开启一个服务用于在此Activity结束后继续向Dribbble获取用户个人信息
+                                Intent intent = new Intent(authorizationActivity,RequestService.class);
+                                intent.putExtra("access_token",accessToken);
+                                authorizationActivity.startService(intent);
 
-                                String pref = authorizationActivity.sharedPreferences.getString(SHARED_PREFERENCE_KEY,"默认值");
                             }
                         },
                         new Response.ErrorListener() {

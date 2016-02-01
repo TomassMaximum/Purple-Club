@@ -14,6 +14,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentTransaction;
@@ -53,12 +55,28 @@ public class DrawerActivity extends AppCompatActivity
 
     private static final String TAG = "DrawerActivity";
     SharedPreferences preferences;
-    static String returnedResponse;
     RoundImage roundImage;
+    public static final int UPDATE_DRAWER = 1;
+    public static final int UPDATE_AVATAR = 2;
 
     ImageView userAvatarImageView;
     TextView userName;
     TextView userDescription;
+
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case UPDATE_DRAWER:
+                    userAvatarImageView.setImageDrawable(roundImage);
+                    break;
+                case UPDATE_AVATAR:
+                    userAvatarImageView.setImageDrawable(roundImage);
+                default:
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,10 +92,6 @@ public class DrawerActivity extends AppCompatActivity
             //当用户点击特定项时，引导用户进行登录。
             @Override
             public void onDrawerOpened(View drawerView) {
-                //如果用户未登录，使用Access Token向Dribbble获取用户个人信息
-                preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
-                String pref = preferences.getString(AuthorizationActivity.SHARED_PREFERENCE_KEY,"");
-                getUserInfo(pref);
 
                 //找到用户头像，用户ID，用户描述三个控件
                 userAvatarImageView = (ImageView) findViewById(R.id.user_avatar);
@@ -85,13 +99,20 @@ public class DrawerActivity extends AppCompatActivity
                 userDescription = (TextView) findViewById(R.id.text_press_to_sign_in);
 
                 //如果用户未登录，显示Dribbble的默认头像，点击引导用户进入登录界面进行授权
-                preferences = getSharedPreferences("NerdPool",MODE_PRIVATE);
+                preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
                 Boolean signedIn = preferences.getBoolean("SignedIn",false);
-                if (!signedIn){
-                    Bitmap userAvatar = Utils.getResizedBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.dribbble_default_avatar),180,180);
 
-                    roundImage = new RoundImage(userAvatar);
-                    userAvatarImageView.setImageDrawable(roundImage);
+                if (!signedIn){
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Bitmap userAvatar = Utils.getResizedBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.dribbble_default_avatar),180,180);
+                            roundImage = new RoundImage(userAvatar);
+                            Message message = new Message();
+                            message.what = UPDATE_DRAWER;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
 
                     userDescription.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -112,15 +133,20 @@ public class DrawerActivity extends AppCompatActivity
                         }
                     });
 
-                    if(!returnedResponse.equals("")){
-                        setUserInfo(returnedResponse);
-                    }
                 }else {
                     String name = preferences.getString("username","");
                     String html = preferences.getString("html_url","");
                     userName.setText(name);
                     userDescription.setText(html);
-                    setLocalAvatar();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            setLocalAvatar();
+                            Message message = new Message();
+                            message.what = UPDATE_AVATAR;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
 
                     userAvatarImageView.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -223,109 +249,6 @@ public class DrawerActivity extends AppCompatActivity
         return true;
     }
 
-    //获取圆角矩形头像
-//    public static Bitmap getRoundedCornerBitmap(Bitmap bitmap) {
-//        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
-//                bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-//        Canvas canvas = new Canvas(output);
-//
-//        final int color = 0xff424242;
-//        final Paint paint = new Paint();
-//        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
-//        final RectF rectF = new RectF(rect);
-//        final float roundPx = 12;
-//
-//        paint.setAntiAlias(true);
-//        canvas.drawARGB(0, 0, 0, 0);
-//        paint.setColor(color);
-//        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
-//
-//        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-//        canvas.drawBitmap(bitmap, rect, rect, paint);
-//
-//        return output;
-//    }
-
-    public void setUserInfo(String response){
-        //获取用户个人信息Json数据成功，开始解析
-        if (response != null){
-            try {
-                JSONObject jsonObject = new JSONObject(response);
-                String name = jsonObject.getString("name");
-                String html_url = jsonObject.getString("html_url");
-                String avatar_url = jsonObject.getString("avatar_url");
-                String id = jsonObject.getString("id");
-                String username = jsonObject.getString("username");
-                String bio = jsonObject.getString("bio");
-                String location = jsonObject.getString("location");
-                String buckets_count = jsonObject.getString("buckets_count");
-                String comments_received_count = jsonObject.getString("comments_received_count");
-                String followers_count = jsonObject.getString("followers_count");
-                String followings_count = jsonObject.getString("followings_count");
-                String likes_count = jsonObject.getString("likes_count");
-                String likes_received_count = jsonObject.getString("likes_received_count");
-                String projects_count = jsonObject.getString("projects_count");
-                String rebounds_received_count = jsonObject.getString("rebounds_received_count");
-                String shots_count = jsonObject.getString("shots_count");
-                String teams_count = jsonObject.getString("teams_count");
-                String can_upload_shot = jsonObject.getString("can_upload_shot");
-                String type = jsonObject.getString("type");
-                String pro = jsonObject.getString("pro");
-                JSONObject linksObject = jsonObject.getJSONObject("links");
-                String web = linksObject.getString("web");
-                String twitter = linksObject.getString("twitter");
-
-                //获取用户头像，保存至本地。
-                //如果url未变化，则无需再次请求，使用本地头像即可。否则，再次进行请求获取新头像。
-                preferences = getSharedPreferences("NerdPool",MODE_PRIVATE);
-                String localUrl = preferences.getString("user_avatar_url","");
-                if (!avatar_url.equals(localUrl)){
-                    //通过网络请求获取到头像
-                    DownloadImageTask downloadImageTask = new DownloadImageTask();
-                    Bitmap userAvatarBitmap = downloadImageTask.execute(avatar_url).get();
-                    Bitmap roundedAvatarBitmap = Utils.getResizedBitmap(userAvatarBitmap,180,180);
-                    userAvatarImageView.setImageBitmap(roundedAvatarBitmap);
-
-                    //将新的url保存至SharedPreference
-                    SharedPreferences.Editor editor = preferences.edit();
-                    editor.putString("user_avatar_url",avatar_url);
-                    editor.putString("name",name);
-                    editor.putString("html_url",html_url);
-                    editor.putString("id",id);
-                    editor.putString("username",username);
-                    editor.putString("bio",bio);
-                    editor.putString("location",location);
-                    editor.putString("buckets_count",buckets_count);
-                    editor.putString("comments_received_count",comments_received_count);
-                    editor.putString("followers_count",followers_count);
-                    editor.putString("followings_count",followings_count);
-                    editor.putString("likes_count",likes_count);
-                    editor.putString("likes_received_count",likes_received_count);
-                    editor.putString("projects_count",projects_count);
-                    editor.putString("rebounds_received_count",rebounds_received_count);
-                    editor.putString("shots_count",shots_count);
-                    editor.putString("teams_count",teams_count);
-                    editor.putString("can_upload_shot",can_upload_shot);
-                    editor.putString("type",type);
-                    editor.putString("pro",pro);
-                    editor.putString("web",web);
-                    editor.putString("twitter",twitter);
-                    editor.apply();
-
-                    new SaveAvatarToLocalTask().execute(roundedAvatarBitmap);
-                }else {
-                    //如果URL未变，则直接使用本地存储的头像。
-                    setLocalAvatar();
-                }
-
-                userName.setText(name);
-                userDescription.setText(html_url);
-            } catch (JSONException | InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     public void setLocalAvatar(){
         String avatarLocalUrl = preferences.getString("avatarLocalUrl", "");
         Uri avatarUri = Uri.parse(avatarLocalUrl);
@@ -336,76 +259,5 @@ public class DrawerActivity extends AppCompatActivity
             e.printStackTrace();
         }
         roundImage = new RoundImage(localAvatar);
-        userAvatarImageView.setImageDrawable(roundImage);
-    }
-
-    public void getUserInfo(String accessToken){
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        String url = GsonData.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + "?" + GsonData.ACCESS_TOKEN + accessToken;
-        Log.e(TAG,"URL:" + url);
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.e(TAG,response.toString());
-                        returnedResponse = response.toString();
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG,"请求出错");
-                        Toast.makeText(DrawerActivity.this, "获取用户信息失败", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-        requestQueue.add(jsonObjectRequest);
-    }
-
-    private class SaveAvatarToLocalTask extends AsyncTask<Bitmap,Void,Void>{
-
-        @Override
-        protected Void doInBackground(Bitmap... params) {
-            Bitmap avatarBitmap = params[0];
-            SharedPreferences.Editor editor = preferences.edit();
-
-            //将用户当前头像保存至本地
-            String path = Environment.getExternalStorageDirectory().toString();
-            OutputStream out = null;
-            File file = new File(path,"user_avatar.jpg");
-            try {
-                out = new FileOutputStream(file);
-                avatarBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-                out.flush();
-                out.close();
-                String avatarLocalUrl = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
-                //存入当前头像URL地址,用户名,个人主页地址
-                editor.putString("avatarLocalUrl", avatarLocalUrl);
-
-                //将用户已登录信息存入SharedPreferences
-                editor.putBoolean("SignedIn", true);
-                editor.apply();
-                Log.e(TAG, "Local URL" + avatarLocalUrl);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        protected Bitmap doInBackground(String... urls) {
-            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
     }
 }
