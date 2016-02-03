@@ -1,7 +1,6 @@
 package com.project.tom.purpleclub;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -11,47 +10,36 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
-import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
  * Created by Tom on 2016/1/25.
  */
-public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener{
+public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefreshListener{
 
-    public final String TAG = "NewsFragment";
+    public final String TAG = "FragmentPage";
+
+    public static int page;
 
     protected RecyclerView recyclerView;
     protected RecyclerViewAdapter myAdapter;
@@ -61,7 +49,12 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     MyHandler myHandler;
     SwipeRefreshLayout swipeRefreshLayout;
 
-    TabLayout tabLayout;
+    public FragmentPage(){}
+
+    public static FragmentPage newInstance(int pageNumber){
+        page = pageNumber;
+        return new FragmentPage();
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -72,9 +65,8 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
-        View rootView = inflater.inflate(R.layout.fragment_news,container,false);
-
-
+        View rootView = inflater.inflate(R.layout.fragment_page,container,false);
+        Log.e(TAG,"fragment page 的 onCreateView被调用");
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(this);
@@ -119,6 +111,7 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Log.e(TAG,"线程被启用");
                 HttpURLConnection connection;
                 try {
                     URL url = new URL(shotsUrl);
@@ -315,15 +308,16 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     }
 
     private class MyHandler extends Handler{
-        NewsFragment newsFragment;
-        public MyHandler(NewsFragment newsFragment){
-            this.newsFragment = newsFragment;
+        FragmentPage fragmentPage;
+        public MyHandler(FragmentPage fragmentPage){
+            this.fragmentPage = fragmentPage;
         }
 
         @Override
         public void handleMessage(Message msg) {
+            Log.e(TAG,"recyclerview设置适配器");
 
-            myAdapter = new RecyclerViewAdapter(newsFragment);
+            myAdapter = new RecyclerViewAdapter(fragmentPage);
 
             recyclerView.setAdapter(myAdapter);
 

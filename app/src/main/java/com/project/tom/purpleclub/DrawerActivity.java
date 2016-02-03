@@ -10,38 +10,20 @@ import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -55,6 +37,7 @@ public class DrawerActivity extends AppCompatActivity
     ImageView userAvatarImageView;
     TextView userName;
     TextView userDescription;
+    Fragment fragment;
 
     private Handler handler = new Handler(){
         @Override
@@ -185,10 +168,16 @@ public class DrawerActivity extends AppCompatActivity
         if (savedInstanceState == null) {
             navigationView.setCheckedItem(R.id.nav_new_data);
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            NewsFragment fragment = new NewsFragment();
-            transaction.replace(R.id.content_fragment, fragment);
+            transaction.add(R.id.fragment_container, new FragmentContainer());
             transaction.commit();
         }
+//        if (savedInstanceState == null) {
+//            navigationView.setCheckedItem(R.id.nav_new_data);
+//            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+//            FragmentPage fragment = new FragmentPage();
+//            transaction.replace(R.id.fragment_container, fragment);
+//            transaction.commit();
+//        }
     }
 
     @Override
@@ -231,10 +220,10 @@ public class DrawerActivity extends AppCompatActivity
 
         if (id == R.id.nav_new_data) {
             // 处理最新资讯选项，呈现fragment
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            NewsFragment fragment = new NewsFragment();
-            transaction.replace(R.id.content_fragment, fragment);
-            transaction.commit();
+//            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+//            FragmentContainer fragmentContainer = new FragmentContainer();
+//            transaction.replace(R.id.content_fragment, fragmentContainer);
+//            transaction.commit();
         } else if (id == R.id.nav_club_show) {
 
         } else if (id == R.id.nav_my_club) {
