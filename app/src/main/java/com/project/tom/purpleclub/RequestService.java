@@ -50,7 +50,7 @@ public class RequestService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String access_token = intent.getStringExtra("access_token");
+        final String access_token = intent.getStringExtra("access_token");
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         String url = GsonData.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + "?" + GsonData.ACCESS_TOKEN + access_token;
@@ -104,8 +104,8 @@ public class RequestService extends Service {
                                 //将用户已登录信息存入SharedPreferences
                                 editor.putBoolean("SignedIn", true);
 
-
                                 //将新的url保存至SharedPreference
+                                editor.putString("access_token",access_token);
                                 editor.putString("user_avatar_url", avatar_url);
                                 editor.putString("name", name);
                                 editor.putString("html_url", html_url);

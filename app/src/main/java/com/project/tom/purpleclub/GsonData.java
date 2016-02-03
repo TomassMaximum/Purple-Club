@@ -13,6 +13,8 @@ public class GsonData {
 
     public static final String DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN = "https://api.dribbble.com/v1/user";
 
+    public static final String DRIBBBLE_GET_SHOTS = "https://api.dribbble.com/v1/shots?";
+
     public static final String ACCESS_TOKEN = "access_token=";
 
     public static final String BUCKETS_ID = "/buckets/:id";

@@ -15,36 +15,40 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/text"
-            android:text="Test Text"
+        <ImageView
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:maxHeight="36dp"
+            android:maxWidth="36dp"
+            android:id="@+id/publisher_avatar"
             android:layout_alignParentTop="true"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
 
         <TextView
             android:text="Title"
             android:id="@+id/title"
-            android:layout_toEndOf="@+id/text"
+            android:layout_toEndOf="@+id/publisher_avatar"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
-        <Button
+        <ImageView
             android:id="@+id/picture"
-            android:layout_below="@+id/text"
+            android:scaleType="centerCrop"
+            android:layout_below="@+id/publisher_avatar"
             android:layout_marginTop="16dp"
             android:layout_width="match_parent"
-            android:layout_height="200dp" />
+            android:layout_height="250dp" />
 
         <ImageView
             android:scaleType="fitCenter"
             android:adjustViewBounds="true"
-            android:maxHeight="28dp"
-            android:maxWidth="28dp"
+            android:maxHeight="24dp"
+            android:maxWidth="24dp"
             android:src="@drawable/eye"
             android:id="@+id/view_icon"
             android:layout_below="@+id/picture"
@@ -56,7 +60,7 @@
 
         <TextView
             android:text="2343"
-            android:id="@+id/view_count"
+            android:id="@+id/views_count"
             android:layout_below="@+id/picture"
             android:layout_toEndOf="@+id/view_icon"
             android:layout_marginTop="8dp"
@@ -72,7 +76,7 @@
             android:maxWidth="24dp"
             android:src="@drawable/bubble"
             android:id="@+id/comments_icon"
-            android:layout_toEndOf="@+id/view_count"
+            android:layout_toEndOf="@+id/views_count"
             android:layout_marginTop="8dp"
             android:layout_marginStart="32dp"
             android:layout_marginBottom="8dp"
