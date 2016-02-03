@@ -3,6 +3,7 @@ package com.project.tom.purpleclub;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,11 +11,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -57,6 +61,8 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     MyHandler myHandler;
     SwipeRefreshLayout swipeRefreshLayout;
 
+    TabLayout tabLayout;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,6 +73,8 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_news,container,false);
+
+
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(this);
@@ -80,8 +88,30 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
         myHandler = new MyHandler(this);
 
-        //使用HttpURLConnection抓取数据
-        //进行网络请求获取shots数据
+        myAdapter = new RecyclerViewAdapter(this);
+
+        recyclerView.setAdapter(myAdapter);
+
+        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,2);
+        SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
+        Cursor cursor = db.query("shots", new String[]{"shot_id"}, null, null, null, null, null);
+        if (!(cursor.moveToFirst())){
+            swipeRefreshLayout.setRefreshing(true);
+        }
+
+        recyclerView.addOnScrollListener(new EndlessOnScrollListener(layoutManager) {
+            @Override
+            public void onScrolledToEnd() {
+                Toast.makeText(getActivity(), "滑动至底部", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        return rootView;
+    }
+
+    @Override
+    public void onRefresh() {
+        //检测到用户下拉刷新动作后，开启一条线程使用HttpURLConnection抓取shots数据并将图片文件存入本地存储
         sharedPreferences = getActivity().getSharedPreferences("NerdPool", getActivity().MODE_PRIVATE);
         String access_token = sharedPreferences.getString("access_token","");
         final String shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token;
@@ -126,6 +156,24 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
                         JSONObject shotObject = shotsArray.getJSONObject(i);
                         String shot_id = shotObject.getString("id");
+
+                        //通过id判断数据库中是否已经有此条记录，有则不再请求，没有则继续请求操作。
+                        boolean flag = false;
+                        Cursor cursor = db.query("shots",new String[]{"shot_id"},null,null,null,null,null);
+                        if (cursor.moveToFirst()){
+                            while (cursor.moveToNext()) {
+                                String id = cursor.getString(cursor.getColumnIndex("shot_id"));
+                                if (id.equals(shot_id)) {
+                                    flag = true;
+                                    break;
+                                }
+                            }
+                        }
+                        cursor.close();
+                        if (flag){
+                            continue;
+                        }
+
                         String title = shotObject.getString("title");
                         if (shotObject.has("description")){
                             description = shotObject.getString("description");
@@ -186,7 +234,6 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                         String type = userObject.getString("type");
                         String pro = userObject.getString("pro");
 
-
                         //创建ContentValues组装解析出来的数据
                         ContentValues values = new ContentValues();
                         values.put("shot_id",shot_id);
@@ -229,7 +276,7 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                         //将要添加的新数据添加到数据库
                         db.insert("shots", null, values);
 
-//                        //向网络请求用户头像和作品图片
+                        //向网络请求用户头像和作品图片
                         InputStream avatarIn;
                         avatarIn = new URL(avatar_url).openStream();
                         Bitmap avatar = BitmapFactory.decodeStream(avatarIn);
@@ -265,18 +312,6 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
             }
         }).start();
 
-
-        return rootView;
-    }
-
-    @Override
-    public void onRefresh() {
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                swipeRefreshLayout.setRefreshing(true);
-            }
-        },5000);
     }
 
     private class MyHandler extends Handler{
@@ -292,6 +327,9 @@ public class NewsFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
             recyclerView.setAdapter(myAdapter);
 
+            swipeRefreshLayout.setRefreshing(false);
+
         }
     }
 }
+

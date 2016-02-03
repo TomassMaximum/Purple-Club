@@ -74,13 +74,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         ImageView likesIconImageView;
         TextView likesCountTextView;
 
-        FrameLayout container;
+        LinearLayout container;
 
         public RecyclerHolder(View itemView) {
             super(itemView);
             view = itemView;
 
-            container = (FrameLayout) itemView.findViewById(R.id.fragment_news_data);
+            container = (LinearLayout) itemView.findViewById(R.id.fragment_news_data);
 
             avatarImageView = (ImageView) itemView.findViewById(R.id.publisher_avatar);
             titleTextView = (TextView) itemView.findViewById(R.id.title);
@@ -108,7 +108,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         cursor = db.query("shots",projection,null,null,null,null,null);
 
         if (cursor.moveToFirst()){
-            Log.e(TAG, "第一次：" + position);
             cursor.moveToPosition(position);
 
             final String avatar_url = cursor.getString(cursor.getColumnIndex("avatar_url"));
@@ -134,7 +133,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
 
-            Log.e(TAG, "第二次：" + cursor.getPosition() + title);
         }else {
             Log.e(TAG,"cursor为空");
         }
