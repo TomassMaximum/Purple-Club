@@ -166,7 +166,7 @@ public class DrawerActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         if (savedInstanceState == null) {
-            navigationView.setCheckedItem(R.id.nav_new_data);
+            navigationView.setCheckedItem(R.id.nav_popularity);
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.add(R.id.fragment_container, new FragmentContainer());
             transaction.commit();
@@ -218,19 +218,23 @@ public class DrawerActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_new_data) {
+        if (id == R.id.nav_popularity) {
             // 处理最新资讯选项，呈现fragment
 //            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 //            FragmentContainer fragmentContainer = new FragmentContainer();
 //            transaction.replace(R.id.content_fragment, fragmentContainer);
 //            transaction.commit();
-        } else if (id == R.id.nav_club_show) {
+        } else if (id == R.id.nav_new_show) {
 
-        } else if (id == R.id.nav_my_club) {
+        } else if (id == R.id.nav_gif_animation) {
 
-        } else if (id == R.id.nav_friends) {
+        } else if (id == R.id.nav_season_winner) {
 
-        } else if (id == R.id.nav_message) {
+        } else if (id == R.id.nav_team_work) {
+
+        }else if (id == R.id.nav_second_production){
+
+        }else if (id == R.id.nav_about_me){
 
         }else if (id == R.id.nav_settings){
 

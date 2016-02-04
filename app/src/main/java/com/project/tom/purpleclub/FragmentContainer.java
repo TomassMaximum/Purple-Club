@@ -31,11 +31,14 @@ public class FragmentContainer extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_container,container,false);
-        Log.e(TAG,"Container被调用");
+        Log.e(TAG, "Container被调用");
 
-        tabLayout = (TabLayout) rootView.findViewById(R.id.tab_layout);
+        tabLayout = (TabLayout) getActivity().findViewById(R.id.tab_layout);
+
+
+        Log.e(TAG,tabLayout.getElevation() + ":::::::");
         viewPager = (ViewPager) rootView.findViewById(R.id.viewpager);
-        myPagerAdapter = new MyPagerAdapter(getFragmentManager());
+        myPagerAdapter = new MyPagerAdapter(getChildFragmentManager());
         viewPager.setAdapter(myPagerAdapter);
         tabLayout.setTabsFromPagerAdapter(myPagerAdapter);
         tabLayout.setupWithViewPager(viewPager);
