@@ -48,6 +48,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     MyDatabaseHelper myDatabaseHelper;
     MyHandler myHandler;
     SwipeRefreshLayout swipeRefreshLayout;
+    String shotsUrl;
 
     public FragmentPage(){}
 
@@ -66,7 +67,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_page,container,false);
-        Log.e(TAG,"fragment page 的 onCreateView被调用");
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(this);
@@ -80,7 +80,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
         myHandler = new MyHandler(this);
 
-        myAdapter = new RecyclerViewAdapter(this);
+        myAdapter = new RecyclerViewAdapter(this,page);
 
         recyclerView.setAdapter(myAdapter);
 
@@ -106,7 +106,30 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         //检测到用户下拉刷新动作后，开启一条线程使用HttpURLConnection抓取shots数据并将图片文件存入本地存储
         sharedPreferences = getActivity().getSharedPreferences("NerdPool", getActivity().MODE_PRIVATE);
         String access_token = sharedPreferences.getString("access_token","");
-        final String shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token;
+
+        //判断页面的角标，生成相应的URL进行请求。
+        switch(page){
+            case 1:
+                //当前碎片为Popularity最受关注时：
+                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token;
+                break;
+            case 2:
+                //当前碎片为Recent最新发布十：
+                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_RECENT;
+                break;
+            case 3:
+                //当前碎片为Views最受欣赏时：
+                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_VIEWS;
+                break;
+            case 4:
+                //当前碎片为comments最受议论时：
+                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_COMMENTS;
+                break;
+            default:
+                break;
+        }
+
+        Log.e(TAG,"Page:" + page + ":::::::::::::::::::::::::::::" + shotsUrl);
 
         new Thread(new Runnable() {
             @Override
@@ -134,6 +157,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
                     myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,2);
                     SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
+                    //db.delete("shots",null,null);
                     for (int i = 0;i < shotsArray.length();i++){
 
                         String description = "";
@@ -149,24 +173,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
                         JSONObject shotObject = shotsArray.getJSONObject(i);
                         String shot_id = shotObject.getString("id");
-
-                        //通过id判断数据库中是否已经有此条记录，有则不再请求，没有则继续请求操作。
-                        boolean flag = false;
-                        Cursor cursor = db.query("shots",new String[]{"shot_id"},null,null,null,null,null);
-                        if (cursor.moveToFirst()){
-                            while (cursor.moveToNext()) {
-                                String id = cursor.getString(cursor.getColumnIndex("shot_id"));
-                                if (id.equals(shot_id)) {
-                                    flag = true;
-                                    break;
-                                }
-                            }
-                        }
-                        cursor.close();
-                        if (flag){
-                            continue;
-                        }
-
                         String title = shotObject.getString("title");
                         if (shotObject.has("description")){
                             description = shotObject.getString("description");
@@ -266,17 +272,37 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         values.put("type", type);
                         values.put("pro", pro);
 
-                        //将要添加的新数据添加到数据库
-                        db.insert("shots", null, values);
+                        //通过id判断数据库中是否已经有此条记录，有则置标记为true
+                        boolean flag = false;
+                        Cursor cursor = db.query("shots",new String[]{"shot_id"},null,null,null,null,null);
+                        if (cursor.moveToFirst()){
+                            do {
+                                String id = cursor.getString(cursor.getColumnIndex("shot_id"));
 
-                        //向网络请求用户头像和作品图片
+                                if (id.equals(shot_id)) {
+                                    flag = true;
+                                    break;
+                                }
+                            }while (cursor.moveToNext());
+                        }
+                        cursor.close();
+
+                        db.update("shots", values, "shot_id=?", new String[]{shot_id});
+
+                        Log.e(TAG,flag + "");
+                        //如果标记为true，证明本地文件中存在该作品的图片和作者头像，不用再次请求，continue下一条信息。
+                        if (flag){
+                            continue;
+                        }
+
+                        //如果数据不存在数据库中，向网络请求用户头像和作品图片
                         InputStream avatarIn;
                         avatarIn = new URL(avatar_url).openStream();
                         Bitmap avatar = BitmapFactory.decodeStream(avatarIn);
                         avatarIn.close();
 
                         InputStream imageIn;
-                        imageIn = new URL(avatar_url).openStream();
+                        imageIn = new URL(image_normal_url).openStream();
                         Bitmap image_small = BitmapFactory.decodeStream(imageIn);
                         imageIn.close();
 
@@ -289,7 +315,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         image_small.compress(Bitmap.CompressFormat.PNG,100,imageOut);
                         imageOut.close();
 
-                        Log.e(TAG, "数据添加完毕" + title);
+                        Log.e(TAG, "数据添加完毕" + flag + title);
 
                     }
                     db.close();
@@ -317,7 +343,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         public void handleMessage(Message msg) {
             Log.e(TAG,"recyclerview设置适配器");
 
-            myAdapter = new RecyclerViewAdapter(fragmentPage);
+            myAdapter = new RecyclerViewAdapter(fragmentPage,page);
 
             recyclerView.setAdapter(myAdapter);
 

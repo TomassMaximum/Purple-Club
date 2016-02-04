@@ -29,9 +29,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     int lastPosition = -1;
     Bitmap image_small;
     RoundImage roundAvatarDrawable;
+    public static int page;
 
-    RecyclerViewAdapter(FragmentPage fragmentPage){
+    RecyclerViewAdapter(FragmentPage fragmentPage,int pageNumber){
         this.fragmentPage = fragmentPage;
+        page = pageNumber;
     }
 
     class RecyclerHolder extends RecyclerView.ViewHolder{
@@ -76,7 +78,26 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
 
         db = myDatabaseHelper.getWritableDatabase();
         String[] projection = {"title","avatar_url","image_small_url","views_count","comments_count","likes_count"};
+
         cursor = db.query("shots",projection,null,null,null,null,null);
+
+        Log.e(TAG,"页码为：" + page);
+
+        switch (page){
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                cursor = db.query("shots",projection,null,null,null,null,"views_count","12");
+                break;
+            case 4:
+                cursor = db.query("shots",projection,null,null,null,null,"comments_count","12");
+                break;
+            default:
+                cursor = db.query("shots",projection,null,null,null,null,null);
+                break;
+        }
 
         if (cursor.moveToFirst()){
             cursor.moveToPosition(position);

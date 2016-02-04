@@ -17,7 +17,11 @@ public class GsonData {
 
     public static final String ACCESS_TOKEN = "access_token=";
 
-    public static final String BUCKETS_ID = "/buckets/:id";
+    public static final String SORT_RECENT = "&sort=recent";
+
+    public static final String SORT_COMMENTS = "&sort=comments";
+
+    public static final String SORT_VIEWS = "&sort=views";
 
     private String id;
     private String name;

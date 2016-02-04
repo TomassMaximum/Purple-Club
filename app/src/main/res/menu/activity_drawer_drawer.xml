@@ -39,10 +39,6 @@
                 android:id="@+id/nav_settings"
                 android:icon="@android:drawable/ic_menu_preferences"
                 android:title="设置" />
-            <item
-                android:id="@+id/nav_version_info"
-                android:icon="@android:drawable/ic_menu_info_details"
-                android:title="版本信息" />
         </menu>
     </item>
 
