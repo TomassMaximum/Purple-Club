@@ -35,11 +35,10 @@ public class FragmentContainer extends Fragment {
 
         tabLayout = (TabLayout) getActivity().findViewById(R.id.tab_layout);
 
-
-        Log.e(TAG,tabLayout.getElevation() + ":::::::");
         viewPager = (ViewPager) rootView.findViewById(R.id.viewpager);
         myPagerAdapter = new MyPagerAdapter(getChildFragmentManager());
         viewPager.setAdapter(myPagerAdapter);
+        viewPager.setOffscreenPageLimit(4);
         tabLayout.setTabsFromPagerAdapter(myPagerAdapter);
         tabLayout.setupWithViewPager(viewPager);
 
@@ -56,9 +55,15 @@ class MyPagerAdapter extends FragmentStatePagerAdapter{
     }
 
     @Override
+    public int getItemPosition(Object object) {
+        return super.getItemPosition(object);
+    }
+
+    @Override
     public Fragment getItem(int position) {
-        FragmentPage fragmentPage = FragmentPage.newInstance(position);
-        return fragmentPage;
+        Log.e("MyPagerAdapter的getItem","position为" + position);
+
+        return FragmentPage.newInstance(position);
     }
 
     @Override

@@ -39,6 +39,12 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
     public final String TAG = "FragmentPage";
 
+    public final String POPULARITY_SHOTS = "shots_popularity";
+    public final String RECENT_SHOTS = "shots_recent";
+    public final String VIEWS_SHOTS = "shots_views";
+    public final String COMMENTS_SHOTS = "shots_comments";
+    public String tableName;
+
     public static int page;
 
     protected RecyclerView recyclerView;
@@ -52,9 +58,15 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
     public FragmentPage(){}
 
-    public static FragmentPage newInstance(int pageNumber){
-        page = pageNumber;
-        return new FragmentPage();
+    public static FragmentPage newInstance(int position){
+//        page = pageNumber;
+//        return new FragmentPage();
+
+        FragmentPage fragmentPage = new FragmentPage();
+        Bundle args = new Bundle();
+        args.putInt("position", position);
+        fragmentPage.setArguments(args);
+        return fragmentPage;
     }
 
     @Override
@@ -80,11 +92,13 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
         myHandler = new MyHandler(this);
 
+        page = getArguments().getInt("position");
+        Log.e(TAG,"传给adapter的page为：" + page);
         myAdapter = new RecyclerViewAdapter(this,page);
 
         recyclerView.setAdapter(myAdapter);
 
-        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,2);
+        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,3);
         SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
         Cursor cursor = db.query("shots", new String[]{"shot_id"}, null, null, null, null, null);
         if (!(cursor.moveToFirst())){
@@ -107,23 +121,29 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         sharedPreferences = getActivity().getSharedPreferences("NerdPool", getActivity().MODE_PRIVATE);
         String access_token = sharedPreferences.getString("access_token","");
 
+        page = getArguments().getInt("position");
+
         //判断页面的角标，生成相应的URL进行请求。
         switch(page){
-            case 1:
+            case 0:
                 //当前碎片为Popularity最受关注时：
                 shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token;
+                tableName = POPULARITY_SHOTS;
                 break;
-            case 2:
+            case 1:
                 //当前碎片为Recent最新发布十：
                 shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_RECENT;
+                tableName = RECENT_SHOTS;
                 break;
-            case 3:
+            case 2:
                 //当前碎片为Views最受欣赏时：
                 shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_VIEWS;
+                tableName = VIEWS_SHOTS;
                 break;
-            case 4:
+            case 3:
                 //当前碎片为comments最受议论时：
                 shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_COMMENTS;
+                tableName = COMMENTS_SHOTS;
                 break;
             default:
                 break;
@@ -134,10 +154,11 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.e(TAG,"线程被启用");
+                Log.e(TAG, "线程被启用");
                 HttpURLConnection connection;
                 try {
                     URL url = new URL(shotsUrl);
+                    Log.e(TAG,shotsUrl);
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
                     connection.setConnectTimeout(8000);
@@ -155,9 +176,12 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                     JSONArray shotsArray = new JSONArray(response);
                     Log.e(TAG,"Array大小：" + shotsArray.length());
 
-                    myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,2);
+                    myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,3);
                     SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
-                    //db.delete("shots",null,null);
+//                    db.delete(POPULARITY_SHOTS,null,null);
+//                    db.delete(RECENT_SHOTS,null,null);
+//                    db.delete(VIEWS_SHOTS,null,null);
+//                    db.delete(COMMENTS_SHOTS,null,null);
                     for (int i = 0;i < shotsArray.length();i++){
 
                         String description = "";
@@ -272,26 +296,15 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         values.put("type", type);
                         values.put("pro", pro);
 
-                        //通过id判断数据库中是否已经有此条记录，有则置标记为true
-                        boolean flag = false;
-                        Cursor cursor = db.query("shots",new String[]{"shot_id"},null,null,null,null,null);
-                        if (cursor.moveToFirst()){
-                            do {
-                                String id = cursor.getString(cursor.getColumnIndex("shot_id"));
+                        boolean flag = checkData(db,shot_id);
 
-                                if (id.equals(shot_id)) {
-                                    flag = true;
-                                    break;
-                                }
-                            }while (cursor.moveToNext());
-                        }
-                        cursor.close();
-
-                        db.update("shots", values, "shot_id=?", new String[]{shot_id});
-
+                        db.insert(tableName,null,values);
                         Log.e(TAG,flag + "");
+
                         //如果标记为true，证明本地文件中存在该作品的图片和作者头像，不用再次请求，continue下一条信息。
                         if (flag){
+                            //更新本地数据库中的数据
+                            db.update(tableName, values, "shot_id=?", new String[]{shot_id});
                             continue;
                         }
 
@@ -307,15 +320,15 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         imageIn.close();
 
                         //将请求到的作者头像和作品小图保存到本地
-                        FileOutputStream avatarOut = getActivity().openFileOutput("avatar" + i + ".png", getActivity().MODE_PRIVATE);
+                        FileOutputStream avatarOut = getActivity().openFileOutput("avatar" + shot_id + ".png", getActivity().MODE_PRIVATE);
                         avatar.compress(Bitmap.CompressFormat.PNG,100,avatarOut);
                         avatarOut.close();
 
-                        FileOutputStream imageOut = getActivity().openFileOutput("image_small" + i + ".png",getActivity().MODE_PRIVATE);
+                        FileOutputStream imageOut = getActivity().openFileOutput("image_small" + shot_id + ".png",getActivity().MODE_PRIVATE);
                         image_small.compress(Bitmap.CompressFormat.PNG,100,imageOut);
                         imageOut.close();
 
-                        Log.e(TAG, "数据添加完毕" + flag + title);
+                        Log.e(TAG, "数据添加完毕" + title);
 
                     }
                     db.close();
@@ -324,11 +337,67 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                     myHandler.sendMessage(message);
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Toast.makeText(getActivity(), "请求数据出错，请重试", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG,"获取数据出错");
+                    //Toast.makeText(getActivity(), "请求数据出错，请重试", Toast.LENGTH_SHORT).show();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
+
+            public boolean checkData(SQLiteDatabase db,String shot_id){
+                //通过id判断数据库中是否已经有此条记录，有则置标记为true
+                boolean flag = false;
+                Cursor popularityCursor = db.query(POPULARITY_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
+                Cursor recentCursor = db.query(RECENT_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
+                Cursor viewsCursor = db.query(VIEWS_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
+                Cursor commentsCursor = db.query(COMMENTS_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
+                if (popularityCursor.moveToFirst()){
+                    do {
+                        String id = popularityCursor.getString(popularityCursor.getColumnIndex("shot_id"));
+
+                        if (id.equals(shot_id)) {
+                            flag = true;
+                            break;
+                        }
+                    }while (popularityCursor.moveToNext());
+                }
+                popularityCursor.close();
+                if (recentCursor.moveToFirst()){
+                    do {
+                        String id = recentCursor.getString(recentCursor.getColumnIndex("shot_id"));
+
+                        if (id.equals(shot_id)) {
+                            flag = true;
+                            break;
+                        }
+                    }while (recentCursor.moveToNext());
+                }
+                recentCursor.close();
+                if (viewsCursor.moveToFirst()){
+                    do {
+                        String id = viewsCursor.getString(viewsCursor.getColumnIndex("shot_id"));
+
+                        if (id.equals(shot_id)) {
+                            flag = true;
+                            break;
+                        }
+                    }while (viewsCursor.moveToNext());
+                }
+                viewsCursor.close();
+                if (commentsCursor.moveToFirst()){
+                    do {
+                        String id = commentsCursor.getString(commentsCursor.getColumnIndex("shot_id"));
+
+                        if (id.equals(shot_id)) {
+                            flag = true;
+                            break;
+                        }
+                    }while (commentsCursor.moveToNext());
+                }
+                commentsCursor.close();
+                return flag;
+            }
+
         }).start();
 
     }

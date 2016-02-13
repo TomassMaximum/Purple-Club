@@ -74,34 +74,37 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
         final RecyclerHolder recyclerHolder = (RecyclerHolder) holder;
 
-        myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,2);
+        myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,3);
 
         db = myDatabaseHelper.getWritableDatabase();
-        String[] projection = {"title","avatar_url","image_small_url","views_count","comments_count","likes_count"};
+        String[] projection = {"shot_id","title","avatar_url","image_small_url","views_count","comments_count","likes_count"};
 
-        cursor = db.query("shots",projection,null,null,null,null,null);
+        //cursor = db.query("shots",projection,null,null,null,null,null);
 
         Log.e(TAG,"页码为：" + page);
 
         switch (page){
+            case 0:
+                cursor = db.query("shots_popularity",projection,null,null,null,null,null);
+                break;
             case 1:
+                cursor = db.query("shots_recent",projection,null,null,null,null,null);
                 break;
             case 2:
+                cursor = db.query("shots_views",projection,null,null,null,null,"views_count","12");
                 break;
             case 3:
-                cursor = db.query("shots",projection,null,null,null,null,"views_count","12");
-                break;
-            case 4:
-                cursor = db.query("shots",projection,null,null,null,null,"comments_count","12");
+                cursor = db.query("shots_comments",projection,null,null,null,null,"comments_count","12");
                 break;
             default:
-                cursor = db.query("shots",projection,null,null,null,null,null);
+                cursor = db.query("shots_popularity",projection,null,null,null,null,null);
                 break;
         }
 
         if (cursor.moveToFirst()){
             cursor.moveToPosition(position);
 
+            final String shot_id = cursor.getString(cursor.getColumnIndex("shot_id"));
             final String avatar_url = cursor.getString(cursor.getColumnIndex("avatar_url"));
             final String title = cursor.getString(cursor.getColumnIndex("title"));
             final String image_small_url = cursor.getString(cursor.getColumnIndex("image_small_url"));
@@ -110,11 +113,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             final String likes_count = cursor.getString(cursor.getColumnIndex("likes_count"));
 
             try {
-                Bitmap avatar = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("avatar" + position + ".png"));
+                Bitmap avatar = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("avatar" + shot_id + ".png"));
                 roundAvatarDrawable = new RoundImage(avatar);
                 recyclerHolder.avatarImageView.setImageDrawable(roundAvatarDrawable);
 
-                Bitmap image_small = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("image_small" + position + ".png"));
+                Bitmap image_small = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("image_small" + shot_id + ".png"));
                 recyclerHolder.pictureImageView.setImageBitmap(image_small);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
