@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -54,16 +55,11 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     MyHandler myHandler;
     SwipeRefreshLayout swipeRefreshLayout;
     String shotsUrl;
-    SQLiteDatabase db;
-    Cursor cursor;
 
     public FragmentPage(){}
 
     public static FragmentPage newInstance(int position,String drawerPosition){
-//        page = pageNumber;
-//        return new FragmentPage();
 
-        //Log.e("newInstance:",drawerPosition);
         FragmentPage fragmentPage = new FragmentPage();
         Bundle args = new Bundle();
         args.putInt("position", position);
@@ -81,11 +77,20 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
-        View rootView = inflater.inflate(R.layout.fragment_page,container,false);
+        final View rootView = inflater.inflate(R.layout.fragment_page,container,false);
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(this);
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
+
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                rootView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                swipeRefreshLayout.setRefreshing(true);
+                onRefresh();
+            }
+        });
 
         recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
 
@@ -101,11 +106,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         myAdapter = new RecyclerViewAdapter(this,page,drawerPosition);
 
         recyclerView.setAdapter(myAdapter);
-
-//        Cursor cursor = db.query("shots", new String[]{"shot_id"}, null, null, null, null, null);
-//        if (!(cursor.moveToFirst())){
-//            swipeRefreshLayout.setRefreshing(true);
-//        }
 
         return rootView;
     }
@@ -314,8 +314,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
                     myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,4);
                     SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
-
-
 
                     for (int i = 0;i < shotsArray.length();i++){
 

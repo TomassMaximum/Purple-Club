@@ -15,6 +15,8 @@ public class Contract {
 
     private String access_token;
 
+    public static final String BASE_URL = "https://api.dribbble.com/v1/shots/";
+
     public static final String DRIBBBLE_GET_CODE_PARAM = "https://dribbble.com/oauth/authorize?client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&scope=public+write+comment+upload";
 
     public static final String DRIBBBLE_GET_ACCESS_TOKEN = "https://dribbble.com/oauth/token?client_id=f6a62b7f35784ebc46ca965c7b7375de8a3172f4887c8ee86e10427e748c27ee&client_secret=7260ba76972c21b693c6960d976f991454930ef19c69eb9e1ed944dee82a1feb&";

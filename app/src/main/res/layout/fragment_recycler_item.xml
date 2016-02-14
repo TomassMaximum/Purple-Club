@@ -37,7 +37,6 @@
             android:layout_height="wrap_content" />
 
         <TextView
-            android:text="2013-01-20 23:12:23"
             android:id="@+id/created_time"
             android:textSize="12sp"
             android:textColor="#bdbdbd"
@@ -70,7 +69,6 @@
             android:layout_height="wrap_content" />
 
         <TextView
-            android:text="2343"
             android:id="@+id/views_count"
             android:layout_below="@+id/picture"
             android:layout_toEndOf="@+id/view_icon"
@@ -96,7 +94,6 @@
             android:layout_height="wrap_content" />
 
         <TextView
-            android:text="334"
             android:id="@+id/comments_count"
             android:layout_below="@+id/picture"
             android:layout_toEndOf="@+id/comments_icon"
@@ -107,7 +104,6 @@
             android:layout_height="wrap_content" />
 
         <TextView
-            android:text="343"
             android:id="@+id/likes_count"
             android:layout_below="@+id/picture"
             android:layout_marginTop="8dp"

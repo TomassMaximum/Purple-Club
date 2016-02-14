@@ -1,5 +1,7 @@
 package com.project.tom.purpleclub;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
@@ -15,7 +17,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Created by Tom on 2016/1/25.
@@ -31,6 +40,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     RoundImage roundAvatarDrawable;
     int page;
     String drawerPosition;
+    boolean liked = false;
 
     RecyclerViewAdapter(FragmentPage fragmentPage,int page,String drawerPosition){
         this.fragmentPage = fragmentPage;
@@ -232,6 +242,49 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             recyclerHolder.viewsCountTextView.setText(views_count);
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
+
+            SharedPreferences sharedPreferences = fragmentPage.getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
+            final String access_token = sharedPreferences.getString("access_token","");
+
+            recyclerHolder.likesCountTextView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (!liked){
+                        liked = true;
+                        final String likeURL = Contract.BASE_URL + shot_id + "/like?access_token=" + access_token;
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                HttpURLConnection connection;
+                                try {
+                                    URL url = new URL(likeURL);
+                                    connection = (HttpURLConnection) url.openConnection();
+                                    connection.setRequestMethod("POST");
+                                    connection.setConnectTimeout(8000);
+                                    connection.setReadTimeout(8000);
+                                    InputStream in = connection.getInputStream();
+                                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+                                    StringBuilder stringBuilder = new StringBuilder();
+                                    String line;
+                                    while ((line = bufferedReader.readLine()) != null){
+                                        stringBuilder.append(line);
+                                    }
+                                    String response = stringBuilder.toString();
+                                    Log.e(TAG,response);
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }).start();
+                    }else {
+                        liked = false;
+                    }
+                }
+            });
+            if (liked){
+                recyclerHolder.likesCountTextView.setTextColor(fragmentPage.getResources().getColor(R.color.colorPrimary));
+            }
 
             String timeZ = created_at.replaceAll("T","  ");
             String time = timeZ.replaceAll("Z","");
