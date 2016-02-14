@@ -47,7 +47,7 @@ public class AuthorizationActivity extends Activity {
 
         //写一个自己的WebViewClient，当加载完成时调用finish关闭当前Activity
         webView.setWebViewClient(new MyWebViewClient(this));
-        webView.loadUrl(GsonData.DRIBBBLE_GET_CODE_PARAM);
+        webView.loadUrl(Contract.DRIBBBLE_GET_CODE_PARAM);
 
         new Thread(){
             public void run()
@@ -87,7 +87,7 @@ public class AuthorizationActivity extends Activity {
 
                 //使用Volley库请求Access Token
                 RequestQueue requestQueue = Volley.newRequestQueue(authorizationActivity);
-                String tokenUrl = GsonData.DRIBBBLE_GET_ACCESS_TOKEN + codeResult;
+                String tokenUrl = Contract.DRIBBBLE_GET_ACCESS_TOKEN + codeResult;
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, tokenUrl, null,
                         new Response.Listener<JSONObject>() {
                             @Override
@@ -96,8 +96,8 @@ public class AuthorizationActivity extends Activity {
 
                                 //使用Gson对Json数据进行解析，取出Access Token用于调用API
                                 Gson gson = new Gson();
-                                GsonData gsonData = gson.fromJson(tokenJson, GsonData.class);
-                                String accessToken = gsonData.getAccessToken();
+                                Contract contract = gson.fromJson(tokenJson, Contract.class);
+                                String accessToken = contract.getAccessToken();
 
                                 //开启一个服务用于在此Activity结束后继续向Dribbble获取用户个人信息
                                 Intent intent = new Intent(authorizationActivity,RequestService.class);

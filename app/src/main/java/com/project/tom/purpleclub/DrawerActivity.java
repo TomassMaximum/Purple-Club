@@ -168,6 +168,10 @@ public class DrawerActivity extends AppCompatActivity
         if (savedInstanceState == null) {
             navigationView.setCheckedItem(R.id.nav_popularity);
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            FragmentContainer fragmentContainer = new FragmentContainer();
+            Bundle args = new Bundle();
+            args.putString("drawerPosition","top");
+            fragmentContainer.setArguments(args);
             transaction.add(R.id.fragment_container, new FragmentContainer());
             transaction.commit();
         }
@@ -218,26 +222,60 @@ public class DrawerActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_popularity) {
+        if (id == R.id.nav_top) {
             // 处理最新资讯选项，呈现fragment
-//            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-//            FragmentContainer fragmentContainer = new FragmentContainer();
-//            transaction.replace(R.id.content_fragment, fragmentContainer);
-//            transaction.commit();
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            FragmentContainer fragmentContainer = new FragmentContainer();
+            Bundle args = new Bundle();
+            args.putString("drawerPosition","top");
+            fragmentContainer.setArguments(args);
+            transaction.replace(R.id.fragment_container, fragmentContainer);
+            transaction.commit();
         } else if (id == R.id.nav_new_show) {
-
+            // 处理最新资讯选项，呈现fragment
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            FragmentContainer fragmentContainer = new FragmentContainer();
+            Bundle args = new Bundle();
+            args.putString("position","new_show");
+            fragmentContainer.setArguments(args);
+            transaction.replace(R.id.fragment_container, fragmentContainer);
+            transaction.commit();
         } else if (id == R.id.nav_gif_animation) {
-
+            // 处理最新资讯选项，呈现fragment
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            FragmentContainer fragmentContainer = new FragmentContainer();
+            Bundle args = new Bundle();
+            args.putString("position","gif_animation");
+            fragmentContainer.setArguments(args);
+            transaction.replace(R.id.fragment_container, fragmentContainer);
+            transaction.commit();
         } else if (id == R.id.nav_season_winner) {
-
+            // 处理最新资讯选项，呈现fragment
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            FragmentContainer fragmentContainer = new FragmentContainer();
+            Bundle args = new Bundle();
+            args.putString("position","season_winner");
+            fragmentContainer.setArguments(args);
+            transaction.replace(R.id.fragment_container, fragmentContainer);
+            transaction.commit();
         } else if (id == R.id.nav_team_work) {
-
+            // 处理最新资讯选项，呈现fragment
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            FragmentContainer fragmentContainer = new FragmentContainer();
+            Bundle args = new Bundle();
+            args.putString("position","team_work");
+            fragmentContainer.setArguments(args);
+            transaction.replace(R.id.fragment_container, fragmentContainer);
+            transaction.commit();
         }else if (id == R.id.nav_second_production){
-
-        }else if (id == R.id.nav_about_me){
-
-        }else if (id == R.id.nav_settings){
-
+            // 处理最新资讯选项，呈现fragment
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            FragmentContainer fragmentContainer = new FragmentContainer();
+            Bundle args = new Bundle();
+            args.putString("position","second_production");
+            fragmentContainer.setArguments(args);
+            transaction.replace(R.id.fragment_container, fragmentContainer);
+            transaction.commit();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

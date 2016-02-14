@@ -53,7 +53,7 @@ public class RequestService extends Service {
         final String access_token = intent.getStringExtra("access_token");
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
-        String url = GsonData.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + "?" + GsonData.ACCESS_TOKEN + access_token;
+        String url = Contract.DRIBBBLE_GET_JSON_WITH_ACCESS_TOKEN + "?" + Contract.ACCESS_TOKEN + access_token;
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
                     @Override

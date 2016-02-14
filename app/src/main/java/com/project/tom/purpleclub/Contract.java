@@ -3,7 +3,15 @@ package com.project.tom.purpleclub;
 /**
  * Created by Tom on 2016/1/28.
  */
-public class GsonData {
+public class Contract {
+
+//    //二十四张表名
+//    public static final String TABLE_NAME_TOP_POPULARITY = "shots_top_popularity";
+//    public static final String TABLE_NAME_TOP_RECENT = "shots_top_recent";
+//    public static final String TABLE_NAME_TOP_VIEWS = "shots_top_views";
+//    public static final String TABLE_NAME_TOP_COMMENTS = "shots_top_comments";
+//
+//    public static final String TABLE_NAME_NEW_SHOW_POPULARITY = ""
 
     private String access_token;
 
@@ -22,6 +30,16 @@ public class GsonData {
     public static final String SORT_COMMENTS = "&sort=comments";
 
     public static final String SORT_VIEWS = "&sort=views";
+
+    public static final String LIST_GIF_ANIMATED = "&list=animated";
+
+    public static final String LIST_NEW_SHOW = "&list=debuts";
+
+    public static final String LIST_SEASON = "&list=playoffs";
+
+    public static final String LIST_SECOND_PRODUCTION = "&list=rebounds";
+
+    public static final String LIST_TEAMS = "&list=teams";
 
     private String id;
     private String name;

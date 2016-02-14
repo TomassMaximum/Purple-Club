@@ -3,7 +3,7 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_popularity"
+            android:id="@+id/nav_top"
             android:icon="@android:drawable/ic_menu_view"
             android:title="状元榜" />
         <item

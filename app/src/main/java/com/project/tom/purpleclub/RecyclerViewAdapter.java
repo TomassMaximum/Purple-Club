@@ -29,11 +29,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     int lastPosition = -1;
     Bitmap image_small;
     RoundImage roundAvatarDrawable;
-    public static int page;
+    int page;
+    String drawerPosition;
 
-    RecyclerViewAdapter(FragmentPage fragmentPage,int pageNumber){
+    RecyclerViewAdapter(FragmentPage fragmentPage,int page,String drawerPosition){
         this.fragmentPage = fragmentPage;
-        page = pageNumber;
+        this.page = page;
+        this.drawerPosition = drawerPosition;
     }
 
     class RecyclerHolder extends RecyclerView.ViewHolder{
@@ -46,6 +48,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         TextView commentsCountTextView;
         ImageView likesIconImageView;
         TextView likesCountTextView;
+        TextView createdTime;
 
         LinearLayout container;
 
@@ -62,6 +65,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             commentsCountTextView = (TextView) itemView.findViewById(R.id.comments_count);
             likesIconImageView = (ImageView) itemView.findViewById(R.id.likes_icon);
             likesCountTextView = (TextView) itemView.findViewById(R.id.likes_count);
+            createdTime = (TextView) itemView.findViewById(R.id.created_time);
         }
     }
     @Override
@@ -74,12 +78,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
         final RecyclerHolder recyclerHolder = (RecyclerHolder) holder;
 
+
         myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,3);
 
         db = myDatabaseHelper.getWritableDatabase();
-        String[] projection = {"shot_id","title","avatar_url","image_small_url","views_count","comments_count","likes_count"};
-
-        //cursor = db.query("shots",projection,null,null,null,null,null);
+        String[] projection = {"shot_id","title","avatar_url","image_small_url","views_count","comments_count","likes_count","created_at"};
 
         Log.e(TAG,"页码为：" + page);
 
@@ -91,10 +94,10 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
                 cursor = db.query("shots_recent",projection,null,null,null,null,null);
                 break;
             case 2:
-                cursor = db.query("shots_views",projection,null,null,null,null,"views_count","12");
+                cursor = db.query("shots_views",projection,null,null,null,null,"views_count DESC","12");
                 break;
             case 3:
-                cursor = db.query("shots_comments",projection,null,null,null,null,"comments_count","12");
+                cursor = db.query("shots_comments",projection,null,null,null,null,null);
                 break;
             default:
                 cursor = db.query("shots_popularity",projection,null,null,null,null,null);
@@ -111,6 +114,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             final String views_count = cursor.getString(cursor.getColumnIndex("views_count"));
             final String comments_count = cursor.getString(cursor.getColumnIndex("comments_count"));
             final String likes_count = cursor.getString(cursor.getColumnIndex("likes_count"));
+            final String created_at = cursor.getString(cursor.getColumnIndex("created_at"));
 
             try {
                 Bitmap avatar = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("avatar" + shot_id + ".png"));
@@ -128,11 +132,17 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
 
+            String timeZ = created_at.replaceAll("T","  ");
+            String time = timeZ.replaceAll("Z","");
+
+            recyclerHolder.createdTime.setText(time);
+
         }else {
             Log.e(TAG,"cursor为空");
         }
         cursor.close();
         db.close();
+
     }
 
     @Override

@@ -18,7 +18,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -55,16 +54,19 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     MyHandler myHandler;
     SwipeRefreshLayout swipeRefreshLayout;
     String shotsUrl;
+    SQLiteDatabase db;
+    Cursor cursor;
 
     public FragmentPage(){}
 
-    public static FragmentPage newInstance(int position){
+    public static FragmentPage newInstance(int position,String drawerPosition){
 //        page = pageNumber;
 //        return new FragmentPage();
 
         FragmentPage fragmentPage = new FragmentPage();
         Bundle args = new Bundle();
         args.putInt("position", position);
+        args.putString("drawerPosition",drawerPosition);
         fragmentPage.setArguments(args);
         return fragmentPage;
     }
@@ -77,6 +79,8 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
+
+        Log.e(TAG, "oncreateview被调用");
 
         View rootView = inflater.inflate(R.layout.fragment_page,container,false);
 
@@ -93,24 +97,18 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         myHandler = new MyHandler(this);
 
         page = getArguments().getInt("position");
+        String drawerPosition = getArguments().getString("drawerPosition");
         Log.e(TAG,"传给adapter的page为：" + page);
-        myAdapter = new RecyclerViewAdapter(this,page);
+
+        myAdapter = new RecyclerViewAdapter(this,page,drawerPosition);
 
         recyclerView.setAdapter(myAdapter);
 
-        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,3);
-        SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
-        Cursor cursor = db.query("shots", new String[]{"shot_id"}, null, null, null, null, null);
-        if (!(cursor.moveToFirst())){
-            swipeRefreshLayout.setRefreshing(true);
-        }
-
-        recyclerView.addOnScrollListener(new EndlessOnScrollListener(layoutManager) {
-            @Override
-            public void onScrolledToEnd() {
-                Toast.makeText(getActivity(), "滑动至底部", Toast.LENGTH_SHORT).show();
-            }
-        });
+//        SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
+//        Cursor cursor = db.query("shots", new String[]{"shot_id"}, null, null, null, null, null);
+//        if (!(cursor.moveToFirst())){
+//            swipeRefreshLayout.setRefreshing(true);
+//        }
 
         return rootView;
     }
@@ -122,32 +120,174 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         String access_token = sharedPreferences.getString("access_token","");
 
         page = getArguments().getInt("position");
+        String drawerPosition = getArguments().getString("drawerPosition");
 
-        //判断页面的角标，生成相应的URL进行请求。
-        switch(page){
-            case 0:
-                //当前碎片为Popularity最受关注时：
-                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token;
-                tableName = POPULARITY_SHOTS;
-                break;
-            case 1:
-                //当前碎片为Recent最新发布十：
-                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_RECENT;
-                tableName = RECENT_SHOTS;
-                break;
-            case 2:
-                //当前碎片为Views最受欣赏时：
-                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_VIEWS;
-                tableName = VIEWS_SHOTS;
-                break;
-            case 3:
-                //当前碎片为comments最受议论时：
-                shotsUrl = GsonData.DRIBBBLE_GET_SHOTS + GsonData.ACCESS_TOKEN + access_token + GsonData.SORT_COMMENTS;
-                tableName = COMMENTS_SHOTS;
-                break;
-            default:
-                break;
+        if (drawerPosition != null){
+            switch (drawerPosition){
+                case "top":
+                    //判断页面的角标，生成相应的URL进行请求。
+                    switch(page){
+                        case 0:
+                            //当前碎片为Popularity最受关注时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token;
+                            tableName = POPULARITY_SHOTS;
+                            break;
+                        case 1:
+                            //当前碎片为Recent最新发布十：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.SORT_RECENT;
+                            tableName = RECENT_SHOTS;
+                            break;
+                        case 2:
+                            //当前碎片为Views最受欣赏时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.SORT_VIEWS;
+                            tableName = VIEWS_SHOTS;
+                            break;
+                        case 3:
+                            //当前碎片为comments最受议论时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.SORT_COMMENTS;
+                            tableName = COMMENTS_SHOTS;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "new_show":
+                    //判断页面的角标，生成相应的URL进行请求。
+                    switch(page){
+                        case 0:
+                            //当前碎片为Popularity最受关注时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW;
+                            tableName = POPULARITY_SHOTS;
+                            break;
+                        case 1:
+                            //当前碎片为Recent最新发布十：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW + Contract.SORT_RECENT;
+                            tableName = RECENT_SHOTS;
+                            break;
+                        case 2:
+                            //当前碎片为Views最受欣赏时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW + Contract.SORT_VIEWS;
+                            tableName = VIEWS_SHOTS;
+                            break;
+                        case 3:
+                            //当前碎片为comments最受议论时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW + Contract.SORT_COMMENTS;
+                            tableName = COMMENTS_SHOTS;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "gif_animation":
+                    switch(page){
+                        case 0:
+                            //当前碎片为Popularity最受关注时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED;
+                            tableName = POPULARITY_SHOTS;
+                            break;
+                        case 1:
+                            //当前碎片为Recent最新发布十：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED + Contract.SORT_RECENT;
+                            tableName = RECENT_SHOTS;
+                            break;
+                        case 2:
+                            //当前碎片为Views最受欣赏时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED + Contract.SORT_VIEWS;
+                            tableName = VIEWS_SHOTS;
+                            break;
+                        case 3:
+                            //当前碎片为comments最受议论时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED + Contract.SORT_COMMENTS;
+                            tableName = COMMENTS_SHOTS;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "season_winner":
+                    switch(page){
+                        case 0:
+                            //当前碎片为Popularity最受关注时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON;
+                            tableName = POPULARITY_SHOTS;
+                            break;
+                        case 1:
+                            //当前碎片为Recent最新发布十：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON + Contract.SORT_RECENT;
+                            tableName = RECENT_SHOTS;
+                            break;
+                        case 2:
+                            //当前碎片为Views最受欣赏时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON + Contract.SORT_VIEWS;
+                            tableName = VIEWS_SHOTS;
+                            break;
+                        case 3:
+                            //当前碎片为comments最受议论时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON + Contract.SORT_COMMENTS;
+                            tableName = COMMENTS_SHOTS;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "team_work":
+                    switch(page){
+                        case 0:
+                            //当前碎片为Popularity最受关注时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS;
+                            tableName = POPULARITY_SHOTS;
+                            break;
+                        case 1:
+                            //当前碎片为Recent最新发布十：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS + Contract.SORT_RECENT;
+                            tableName = RECENT_SHOTS;
+                            break;
+                        case 2:
+                            //当前碎片为Views最受欣赏时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS + Contract.SORT_VIEWS;
+                            tableName = VIEWS_SHOTS;
+                            break;
+                        case 3:
+                            //当前碎片为comments最受议论时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS + Contract.SORT_COMMENTS;
+                            tableName = COMMENTS_SHOTS;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "second_production":
+                    switch(page){
+                        case 0:
+                            //当前碎片为Popularity最受关注时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION;
+                            tableName = POPULARITY_SHOTS;
+                            break;
+                        case 1:
+                            //当前碎片为Recent最新发布十：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION + Contract.SORT_RECENT;
+                            tableName = RECENT_SHOTS;
+                            break;
+                        case 2:
+                            //当前碎片为Views最受欣赏时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION + Contract.SORT_VIEWS;
+                            tableName = VIEWS_SHOTS;
+                            break;
+                        case 3:
+                            //当前碎片为comments最受议论时：
+                            shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION + Contract.SORT_COMMENTS;
+                            tableName = COMMENTS_SHOTS;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
         }
+
 
         Log.e(TAG,"Page:" + page + ":::::::::::::::::::::::::::::" + shotsUrl);
 
@@ -178,10 +318,9 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
                     myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,3);
                     SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
-//                    db.delete(POPULARITY_SHOTS,null,null);
-//                    db.delete(RECENT_SHOTS,null,null);
-//                    db.delete(VIEWS_SHOTS,null,null);
-//                    db.delete(COMMENTS_SHOTS,null,null);
+
+                    //db.delete(tableName,null,null);
+
                     for (int i = 0;i < shotsArray.length();i++){
 
                         String description = "";
@@ -218,6 +357,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         String likes_count = shotObject.getString("likes_count");
                         String comments_count = shotObject.getString("comments_count");
                         String created_at = shotObject.getString("created_at");
+                        Log.e(TAG,created_at);
                         String animated = shotObject.getString("animated");
 
                         JSONObject userObject = shotObject.getJSONObject("user");
@@ -412,7 +552,11 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         public void handleMessage(Message msg) {
             Log.e(TAG,"recyclerview设置适配器");
 
-            myAdapter = new RecyclerViewAdapter(fragmentPage,page);
+            page = getArguments().getInt("position");
+
+            String drawerPosition = getArguments().getString("drawerPosition");
+
+            myAdapter = new RecyclerViewAdapter(fragmentPage,page,drawerPosition);
 
             recyclerView.setAdapter(myAdapter);
 
