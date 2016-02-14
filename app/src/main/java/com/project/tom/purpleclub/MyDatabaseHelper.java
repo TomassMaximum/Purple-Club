@@ -18,6 +18,7 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
 
     public static final String CREATE_SHOTS = " ("
             + "id integer primary key autoincrement, "
+            + "drawer_position text, "
             + "shot_id text, "
             + "title text, "
             + "description text, "

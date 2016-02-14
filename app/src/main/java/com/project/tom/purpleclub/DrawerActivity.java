@@ -2,6 +2,7 @@ package com.project.tom.purpleclub;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -33,6 +34,9 @@ public class DrawerActivity extends AppCompatActivity
     RoundImage roundImage;
     public static final int UPDATE_DRAWER = 1;
     public static final int UPDATE_AVATAR = 2;
+
+    MyDatabaseHelper myDatabaseHelper;
+    SQLiteDatabase db;
 
     ImageView userAvatarImageView;
     TextView userName;
@@ -166,13 +170,13 @@ public class DrawerActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         if (savedInstanceState == null) {
-            navigationView.setCheckedItem(R.id.nav_popularity);
+            navigationView.setCheckedItem(R.id.nav_top);
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             FragmentContainer fragmentContainer = new FragmentContainer();
             Bundle args = new Bundle();
             args.putString("drawerPosition","top");
             fragmentContainer.setArguments(args);
-            transaction.add(R.id.fragment_container, new FragmentContainer());
+            transaction.add(R.id.fragment_container, fragmentContainer);
             transaction.commit();
         }
 //        if (savedInstanceState == null) {
@@ -236,7 +240,7 @@ public class DrawerActivity extends AppCompatActivity
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             FragmentContainer fragmentContainer = new FragmentContainer();
             Bundle args = new Bundle();
-            args.putString("position","new_show");
+            args.putString("drawerPosition","new_show");
             fragmentContainer.setArguments(args);
             transaction.replace(R.id.fragment_container, fragmentContainer);
             transaction.commit();
@@ -245,7 +249,7 @@ public class DrawerActivity extends AppCompatActivity
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             FragmentContainer fragmentContainer = new FragmentContainer();
             Bundle args = new Bundle();
-            args.putString("position","gif_animation");
+            args.putString("drawerPosition","gif_animation");
             fragmentContainer.setArguments(args);
             transaction.replace(R.id.fragment_container, fragmentContainer);
             transaction.commit();
@@ -254,7 +258,7 @@ public class DrawerActivity extends AppCompatActivity
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             FragmentContainer fragmentContainer = new FragmentContainer();
             Bundle args = new Bundle();
-            args.putString("position","season_winner");
+            args.putString("drawerPosition","season_winner");
             fragmentContainer.setArguments(args);
             transaction.replace(R.id.fragment_container, fragmentContainer);
             transaction.commit();
@@ -263,7 +267,7 @@ public class DrawerActivity extends AppCompatActivity
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             FragmentContainer fragmentContainer = new FragmentContainer();
             Bundle args = new Bundle();
-            args.putString("position","team_work");
+            args.putString("drawerPosition","team_work");
             fragmentContainer.setArguments(args);
             transaction.replace(R.id.fragment_container, fragmentContainer);
             transaction.commit();
@@ -272,7 +276,7 @@ public class DrawerActivity extends AppCompatActivity
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             FragmentContainer fragmentContainer = new FragmentContainer();
             Bundle args = new Bundle();
-            args.putString("position","second_production");
+            args.putString("drawerPosition","second_production");
             fragmentContainer.setArguments(args);
             transaction.replace(R.id.fragment_container, fragmentContainer);
             transaction.commit();

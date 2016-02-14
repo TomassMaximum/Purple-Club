@@ -21,6 +21,11 @@ public class FragmentContainer extends Fragment {
     TabLayout tabLayout;
     ViewPager viewPager;
     MyPagerAdapter myPagerAdapter;
+    String drawerPosition;
+
+//    public FragmentContainer(String drawerPosition){
+//        this.drawerPosition = drawerPosition;
+//    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -68,7 +73,7 @@ class MyPagerAdapter extends FragmentStatePagerAdapter{
 
     @Override
     public Fragment getItem(int position) {
-        Log.e("MyPagerAdapter的getItem", "position为" + position);
+        Log.e("MyPagerAdapter的getItem", "position为" + position + "drawer为" + drawerPosition);
 
         return new FragmentPage().newInstance(position,drawerPosition);
     }

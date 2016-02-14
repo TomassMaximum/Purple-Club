@@ -63,6 +63,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 //        page = pageNumber;
 //        return new FragmentPage();
 
+        //Log.e("newInstance:",drawerPosition);
         FragmentPage fragmentPage = new FragmentPage();
         Bundle args = new Bundle();
         args.putInt("position", position);
@@ -80,8 +81,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
-        Log.e(TAG, "oncreateview被调用");
-
         View rootView = inflater.inflate(R.layout.fragment_page,container,false);
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
@@ -98,13 +97,11 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
         page = getArguments().getInt("position");
         String drawerPosition = getArguments().getString("drawerPosition");
-        Log.e(TAG,"传给adapter的page为：" + page);
 
         myAdapter = new RecyclerViewAdapter(this,page,drawerPosition);
 
         recyclerView.setAdapter(myAdapter);
 
-//        SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
 //        Cursor cursor = db.query("shots", new String[]{"shot_id"}, null, null, null, null, null);
 //        if (!(cursor.moveToFirst())){
 //            swipeRefreshLayout.setRefreshing(true);
@@ -120,7 +117,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         String access_token = sharedPreferences.getString("access_token","");
 
         page = getArguments().getInt("position");
-        String drawerPosition = getArguments().getString("drawerPosition");
+        final String drawerPosition = getArguments().getString("drawerPosition");
 
         if (drawerPosition != null){
             switch (drawerPosition){
@@ -298,7 +295,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                 HttpURLConnection connection;
                 try {
                     URL url = new URL(shotsUrl);
-                    Log.e(TAG,shotsUrl);
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
                     connection.setConnectTimeout(8000);
@@ -316,10 +312,10 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                     JSONArray shotsArray = new JSONArray(response);
                     Log.e(TAG,"Array大小：" + shotsArray.length());
 
-                    myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,3);
+                    myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,4);
                     SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
 
-                    //db.delete(tableName,null,null);
+
 
                     for (int i = 0;i < shotsArray.length();i++){
 
@@ -399,6 +395,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
                         //创建ContentValues组装解析出来的数据
                         ContentValues values = new ContentValues();
+                        values.put("drawer_position",drawerPosition);
                         values.put("shot_id",shot_id);
                         values.put("title",title);
                         values.put("description",description);
