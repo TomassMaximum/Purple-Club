@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PorterDuff;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,6 +17,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -40,7 +42,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     RoundImage roundAvatarDrawable;
     int page;
     String drawerPosition;
-    boolean liked = false;
 
     RecyclerViewAdapter(FragmentPage fragmentPage,int page,String drawerPosition){
         this.fragmentPage = fragmentPage;
@@ -59,6 +60,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         ImageView likesIconImageView;
         TextView likesCountTextView;
         TextView createdTime;
+        ImageView viewsIconImageView;
+        ImageView commentsIconImageView;
 
         LinearLayout container;
 
@@ -76,6 +79,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             likesIconImageView = (ImageView) itemView.findViewById(R.id.likes_icon);
             likesCountTextView = (TextView) itemView.findViewById(R.id.likes_count);
             createdTime = (TextView) itemView.findViewById(R.id.created_time);
+            viewsIconImageView = (ImageView) itemView.findViewById(R.id.view_icon);
+            commentsIconImageView = (ImageView) itemView.findViewById(R.id.comments_icon);
         }
     }
     @Override
@@ -216,7 +221,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             cursor.moveToPosition(position);
 
             final String id = cursor.getString(cursor.getColumnIndex("id"));
-            Log.e(TAG,id);
+            Log.e(TAG, id);
 
             final String shot_id = cursor.getString(cursor.getColumnIndex("shot_id"));
             final String avatar_url = cursor.getString(cursor.getColumnIndex("avatar_url"));
@@ -238,53 +243,39 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
                 e.printStackTrace();
             }
 
+            final SharedPreferences sharedPreferences = fragmentPage.getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
+            final String access_token = sharedPreferences.getString("access_token","");
+
             recyclerHolder.titleTextView.setText(title);
             recyclerHolder.viewsCountTextView.setText(views_count);
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
 
-            SharedPreferences sharedPreferences = fragmentPage.getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
-            final String access_token = sharedPreferences.getString("access_token","");
+            boolean liked = sharedPreferences.getBoolean(shot_id + "liked",false);
+            if (!liked){
+                recyclerHolder.likesCountTextView.setTextColor(fragmentPage.getResources().getColor(R.color.black));
+                recyclerHolder.likesIconImageView.setColorFilter(fragmentPage.getResources().getColor(R.color.black), PorterDuff.Mode.SRC_ATOP);
+            }else {
+                recyclerHolder.likesCountTextView.setTextColor(fragmentPage.getResources().getColor(R.color.colorPrimary));
+                recyclerHolder.likesIconImageView.setColorFilter(fragmentPage.getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_ATOP);
+            }
 
+            recyclerHolder.viewsIconImageView.setColorFilter(fragmentPage.getResources().getColor(R.color.black), PorterDuff.Mode.SRC_ATOP);
+            recyclerHolder.commentsIconImageView.setColorFilter(fragmentPage.getResources().getColor(R.color.black), PorterDuff.Mode.SRC_ATOP);
+
+            //用户点击喜欢图标或按钮，向服务器post一个喜欢请求或取消一个喜欢。
             recyclerHolder.likesCountTextView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (!liked){
-                        liked = true;
-                        final String likeURL = Contract.BASE_URL + shot_id + "/like?access_token=" + access_token;
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                HttpURLConnection connection;
-                                try {
-                                    URL url = new URL(likeURL);
-                                    connection = (HttpURLConnection) url.openConnection();
-                                    connection.setRequestMethod("POST");
-                                    connection.setConnectTimeout(8000);
-                                    connection.setReadTimeout(8000);
-                                    InputStream in = connection.getInputStream();
-                                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
-                                    StringBuilder stringBuilder = new StringBuilder();
-                                    String line;
-                                    while ((line = bufferedReader.readLine()) != null){
-                                        stringBuilder.append(line);
-                                    }
-                                    String response = stringBuilder.toString();
-                                    Log.e(TAG,response);
-
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }).start();
-                    }else {
-                        liked = false;
-                    }
+                    likeClicked(shot_id, access_token,recyclerHolder,likes_count,sharedPreferences);
                 }
             });
-            if (liked){
-                recyclerHolder.likesCountTextView.setTextColor(fragmentPage.getResources().getColor(R.color.colorPrimary));
-            }
+            recyclerHolder.likesIconImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    likeClicked(shot_id, access_token,recyclerHolder,likes_count,sharedPreferences);
+                }
+            });
 
             String timeZ = created_at.replaceAll("T","  ");
             String time = timeZ.replaceAll("Z","");
@@ -304,14 +295,78 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         return 12;
     }
 
-    private void setAnimation(View viewToAnimate, int position)
-    {
-        // If the bound view wasn't previously displayed on screen, it's animated
-        if (position > lastPosition)
-        {
-            Animation animation = AnimationUtils.loadAnimation(fragmentPage.getContext(), android.R.anim.slide_in_left);
-            viewToAnimate.startAnimation(animation);
-            lastPosition = position;
+    public void likeClicked(String shot_id,String access_token,RecyclerHolder recyclerHolder,String likesCount,SharedPreferences sharedPreferences){
+        Log.e(TAG,"被点击了");
+        boolean liked = sharedPreferences.getBoolean(shot_id + "liked",false);
+        if (!liked){
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(shot_id + "liked",true);
+            editor.commit();
+            final String likeURL = Contract.BASE_URL + shot_id + "/like?access_token=" + access_token;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    HttpURLConnection connection;
+                    try {
+                        URL url = new URL(likeURL);
+                        connection = (HttpURLConnection) url.openConnection();
+                        connection.setRequestMethod("POST");
+                        connection.setConnectTimeout(8000);
+                        connection.setReadTimeout(8000);
+                        InputStream in = connection.getInputStream();
+                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+                        StringBuilder stringBuilder = new StringBuilder();
+                        String line;
+                        while ((line = bufferedReader.readLine()) != null){
+                            stringBuilder.append(line);
+                        }
+                        String response = stringBuilder.toString();
+                        Log.e(TAG,response);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+            recyclerHolder.likesIconImageView.setColorFilter(fragmentPage.getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_ATOP);
+            recyclerHolder.likesCountTextView.setTextColor(fragmentPage.getResources().getColor(R.color.colorPrimary));
+            int likes = Integer.parseInt(likesCount) + 1;
+            recyclerHolder.likesCountTextView.setText(Integer.toString(likes));
+            Toast.makeText(fragmentPage.getActivity(), "已喜欢", Toast.LENGTH_SHORT).show();
+        }else {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(shot_id + "liked",false);
+            editor.commit();
+            final String likeURL = Contract.BASE_URL + shot_id + "/like?access_token=" + access_token;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    HttpURLConnection connection;
+                    try {
+                        URL url = new URL(likeURL);
+                        connection = (HttpURLConnection) url.openConnection();
+                        connection.setRequestMethod("DELETE");
+                        connection.setConnectTimeout(8000);
+                        connection.setReadTimeout(8000);
+                        InputStream in = connection.getInputStream();
+                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+                        StringBuilder stringBuilder = new StringBuilder();
+                        String line;
+                        while ((line = bufferedReader.readLine()) != null){
+                            stringBuilder.append(line);
+                        }
+                        String response = stringBuilder.toString();
+                        Log.e(TAG,response);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+            recyclerHolder.likesIconImageView.setColorFilter(fragmentPage.getResources().getColor(R.color.black), PorterDuff.Mode.SRC_ATOP);
+            recyclerHolder.likesCountTextView.setTextColor(fragmentPage.getResources().getColor(R.color.black));
+            recyclerHolder.likesCountTextView.setText(Integer.toString(Integer.parseInt(likesCount)));
+            Toast.makeText(fragmentPage.getActivity(), "已取消喜欢", Toast.LENGTH_SHORT).show();
         }
     }
 }
