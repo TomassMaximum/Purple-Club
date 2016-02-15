@@ -27,9 +27,11 @@
         <activity
             android:name=".PersonalInfoActivity"
             android:label="个人信息"
-            android:theme="@style/AppTheme.NoActionBar"/>
+            android:theme="@style/AppTheme.NoActionBar" />
 
-        <service android:name=".RequestService"/>
+        <service android:name=".RequestService" />
+
+        <activity android:name=".ShotDetailActivity"></activity>
     </application>
 
 </manifest>

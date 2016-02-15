@@ -351,7 +351,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         String likes_count = shotObject.getString("likes_count");
                         String comments_count = shotObject.getString("comments_count");
                         String created_at = shotObject.getString("created_at");
-                        Log.e(TAG,created_at);
+//                        Log.e(TAG,created_at);
                         String animated = shotObject.getString("animated");
 
                         JSONObject userObject = shotObject.getJSONObject("user");
@@ -395,6 +395,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         ContentValues values = new ContentValues();
                         values.put("drawer_position",drawerPosition);
                         values.put("shot_id",shot_id);
+                        Log.e(TAG,"Shot_ID为：" + shot_id);
                         values.put("title",title);
                         values.put("description",description);
                         values.put("width",width);
@@ -462,8 +463,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         FileOutputStream imageOut = getActivity().openFileOutput("image_small" + shot_id + ".png",getActivity().MODE_PRIVATE);
                         image_small.compress(Bitmap.CompressFormat.PNG,100,imageOut);
                         imageOut.close();
-
-                        Log.e(TAG, "数据添加完毕" + title);
 
                     }
                     db.close();
@@ -545,8 +544,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
         @Override
         public void handleMessage(Message msg) {
-            Log.e(TAG,"recyclerview设置适配器");
-
             page = getArguments().getInt("position");
 
             String drawerPosition = getArguments().getString("drawerPosition");
