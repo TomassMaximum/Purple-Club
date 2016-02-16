@@ -31,7 +31,8 @@
 
         <service android:name=".RequestService" />
 
-        <activity android:name=".ShotDetailActivity"></activity>
+        <activity android:name=".ShotDetailActivity"
+            android:theme="@style/AppTheme.NoActionBar"/>
     </application>
 
 </manifest>

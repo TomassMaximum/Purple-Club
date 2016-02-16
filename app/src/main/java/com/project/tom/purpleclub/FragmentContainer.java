@@ -21,11 +21,6 @@ public class FragmentContainer extends Fragment {
     TabLayout tabLayout;
     ViewPager viewPager;
     MyPagerAdapter myPagerAdapter;
-    String drawerPosition;
-
-//    public FragmentContainer(String drawerPosition){
-//        this.drawerPosition = drawerPosition;
-//    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

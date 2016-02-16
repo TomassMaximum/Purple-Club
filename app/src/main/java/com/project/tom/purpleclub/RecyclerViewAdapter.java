@@ -211,14 +211,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
                         break;
                 }
                 break;
-
         }
 
         if (cursor.moveToFirst()){
             cursor.moveToPosition(position);
 
             final String id = cursor.getString(cursor.getColumnIndex("id"));
-            Log.e(TAG, id);
 
             final String shot_id = cursor.getString(cursor.getColumnIndex("shot_id"));
             final String avatar_url = cursor.getString(cursor.getColumnIndex("avatar_url"));

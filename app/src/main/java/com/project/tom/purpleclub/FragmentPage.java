@@ -282,16 +282,11 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                 default:
                     break;
             }
-
         }
-
-
-        Log.e(TAG,"Page:" + page + ":::::::::::::::::::::::::::::" + shotsUrl);
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.e(TAG, "线程被启用");
                 HttpURLConnection connection;
                 try {
                     URL url = new URL(shotsUrl);
@@ -307,10 +302,8 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         stringBuilder.append(line);
                     }
                     String response = stringBuilder.toString();
-                    Log.e(TAG,response);
 
                     JSONArray shotsArray = new JSONArray(response);
-                    Log.e(TAG,"Array大小：" + shotsArray.length());
 
                     myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,5);
                     SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
@@ -351,7 +344,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         String likes_count = shotObject.getString("likes_count");
                         String comments_count = shotObject.getString("comments_count");
                         String created_at = shotObject.getString("created_at");
-//                        Log.e(TAG,created_at);
                         String animated = shotObject.getString("animated");
 
                         JSONObject userObject = shotObject.getJSONObject("user");
@@ -395,7 +387,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         ContentValues values = new ContentValues();
                         values.put("drawer_position",drawerPosition);
                         values.put("shot_id",shot_id);
-                        Log.e(TAG,"Shot_ID为：" + shot_id);
                         values.put("title",title);
                         values.put("description",description);
                         values.put("width",width);
@@ -435,7 +426,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         boolean flag = checkData(db,shot_id);
 
                         db.insert(tableName,null,values);
-                        Log.e(TAG,flag + "");
 
                         //如果标记为true，证明本地文件中存在该作品的图片和作者头像，不用再次请求，continue下一条信息。
                         if (flag){
