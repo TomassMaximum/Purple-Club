@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:gravity="center"
+        android:showDividers="middle"
+        android:layout_margin="8dp"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_margin="8dp"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:maxHeight="36dp"
+            android:maxWidth="36dp"
+            android:id="@+id/commenter_avatar"
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
+
+        <TextView
+            android:textSize="12sp"
+            android:id="@+id/comment_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:id="@+id/commenter_user_name"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_marginEnd="8dp"
+                android:id="@+id/comment_likes_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <ImageView
+                android:id="@+id/likes_icon"
+                android:src="@drawable/heart"
+                android:scaleType="fitCenter"
+                android:layout_marginTop="5dp"
+                android:adjustViewBounds="true"
+                android:maxHeight="24dp"
+                android:maxWidth="24dp"
+                android:layout_marginEnd="12dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/comment_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+</LinearLayout>

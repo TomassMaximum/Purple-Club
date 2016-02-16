@@ -43,6 +43,10 @@ public class Contract {
 
     public static final String LIST_TEAMS = "&list=teams";
 
+    public static final String COMMENTS = "/comments?";
+
+    public static final String COMMENTS_TWO = "/comments";
+
     private String id;
     private String name;
     private String username;

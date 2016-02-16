@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -90,7 +91,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
         final RecyclerHolder recyclerHolder = (RecyclerHolder) holder;
 
-        myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,4);
+        myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,5);
 
         db = myDatabaseHelper.getWritableDatabase();
         String[] projection = {"id","drawer_position","shot_id","title","avatar_url","image_small_url","views_count","comments_count","likes_count","created_at"};
@@ -230,7 +231,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
 
             try {
                 Bitmap avatar = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("avatar" + shot_id + ".png"));
-                roundAvatarDrawable = new RoundImage(avatar);
+                Drawable roundAvatarDrawable = new RoundImage(avatar);
                 recyclerHolder.avatarImageView.setImageDrawable(roundAvatarDrawable);
 
                 Bitmap image_small = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("image_small" + shot_id + ".png"));

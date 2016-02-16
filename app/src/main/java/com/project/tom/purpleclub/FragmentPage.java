@@ -312,7 +312,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                     JSONArray shotsArray = new JSONArray(response);
                     Log.e(TAG,"Array大小：" + shotsArray.length());
 
-                    myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,4);
+                    myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,5);
                     SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
 
                     for (int i = 0;i < shotsArray.length();i++){

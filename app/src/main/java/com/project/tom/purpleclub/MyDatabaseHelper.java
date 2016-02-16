@@ -56,6 +56,35 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
             + "pro text, "
             + "team text)";
 
+    public static final String COMMENTS_TABLE = "create table comments ("
+            + "id integer primary key autoincrement, "
+            + "comment_id text, "
+            + "body text, "
+            + "likes_count text, "
+            + "created_at text, "
+            + "user_id text, "
+            + "name text, "
+            + "username text, "
+            + "html_url text, "
+            + "avatar_url text, "
+            + "bio text, "
+            + "location text, "
+            + "web text, "
+            + "twitter text, "
+            + "buckets_count text, "
+            + "comments_received_count text, "
+            + "followers_count text, "
+            + "followings_count text, "
+            + "user_likes_count text, "
+            + "likes_received_count text, "
+            + "projects_count text, "
+            + "rebounds_received_count text, "
+            + "shots_count text, "
+            + "teams_count text, "
+            + "can_upload_shot text, "
+            + "type text, "
+            + "pro text)";
+
     public MyDatabaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
     }
@@ -66,6 +95,7 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE + RECENT_SHOTS + CREATE_SHOTS);
         db.execSQL(CREATE + VIEWS_SHOTS + CREATE_SHOTS);
         db.execSQL(CREATE + COMMENTS_SHOTS + CREATE_SHOTS);
+        db.execSQL(COMMENTS_TABLE);
     }
 
     @Override
@@ -74,6 +104,7 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("drop table if exists " + RECENT_SHOTS);
         db.execSQL("drop table if exists " + VIEWS_SHOTS);
         db.execSQL("drop table if exists " + COMMENTS_SHOTS);
+        db.execSQL("drop table if exists " + "comments");
         onCreate(db);
 
     }
