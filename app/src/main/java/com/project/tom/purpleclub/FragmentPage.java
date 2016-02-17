@@ -100,12 +100,12 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
         myHandler = new MyHandler(this);
 
-        page = getArguments().getInt("position");
-        String drawerPosition = getArguments().getString("drawerPosition");
-
-        myAdapter = new RecyclerViewAdapter(this,page,drawerPosition);
-
-        recyclerView.setAdapter(myAdapter);
+//        page = getArguments().getInt("position");
+//        String drawerPosition = getArguments().getString("drawerPosition");
+//
+//        myAdapter = new RecyclerViewAdapter(this,page,drawerPosition);
+//
+//        recyclerView.setAdapter(myAdapter);
 
         return rootView;
     }

@@ -91,13 +91,13 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         sharedPreferences = getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
         commentsCount = sharedPreferences.getString("shot_comments_count", "0");
 
-        Log.e(TAG,commentsCount);
+        Log.e(TAG, commentsCount);
         recyclerView = (RecyclerView) rootView.findViewById(R.id.comments_recycler_view);
-        commentRecyclerViewAdapter = new CommentRecyclerViewAdapter(this,shot_id,commentsCount);
-        layoutManager = new LinearLayoutManager(getActivity());
-
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setAdapter(commentRecyclerViewAdapter);
+//        commentRecyclerViewAdapter = new CommentRecyclerViewAdapter(this,shot_id,commentsCount);
+//        layoutManager = new LinearLayoutManager(getActivity());
+//
+//        recyclerView.setLayoutManager(layoutManager);
+//        recyclerView.setAdapter(commentRecyclerViewAdapter);
 
         return rootView;
     }
@@ -110,6 +110,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         commentsCount = sharedPreferences.getString("shot_comments_count","");
         myDatabaseHelper = new MyDatabaseHelper(getActivity(),"comments",null,5);
         final String stringUrl = Contract.BASE_URL + shot_id + Contract.COMMENTS + Contract.ACCESS_TOKEN + access_token;
+        Log.e(TAG,stringUrl);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -221,11 +222,11 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
                         Log.e(TAG,flag + body);
 
                         //如果标记为true，证明本地文件中存在该作品的图片和作者头像，不用再次请求，continue下一条信息。
-                        if (flag){
-                            //更新本地数据库中的数据
-                            db.update("comments", values, "comment_id=?", new String[]{comment_id});
-                            continue;
-                        }
+//                        if (flag){
+//                            //更新本地数据库中的数据
+//                            db.update("comments", values, "comment_id=?", new String[]{comment_id});
+//                            continue;
+//                        }
 
                         //如果数据不存在数据库中，向网络请求用户头像
                         InputStream avatarIn;
@@ -239,7 +240,9 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
                         avatarOut.close();
                         Log.e(TAG,"第" + i + "组数据请求完毕");
                     }
-                    db.close();
+                    if (db != null){
+                        db.close();
+                    }
 
                     Message message = new Message();
                     message.obj = this;
@@ -290,6 +293,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
             commentRecyclerViewAdapter = new CommentRecyclerViewAdapter(shotCommentFragment,shot_id,comments_count);
             recyclerView.setLayoutManager(new LinearLayoutManager(shotCommentFragment.getActivity()));
             recyclerView.setAdapter(commentRecyclerViewAdapter);
+            swipeRefreshLayout.setRefreshing(false);
         }
     }
 }
@@ -372,7 +376,6 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter {
             final String created_at = cursor.getString(cursor.getColumnIndex("created_at"));
             //final String comment_id = cursor.getString(cursor.getColumnIndex("comment_id"));
             cursor.moveToPosition(position);
-            Log.e(TAG, "评论为：" + body);
 
             try {
                 Bitmap avatar = BitmapFactory.decodeStream(shotCommentFragment.getActivity().openFileInput("avatar" + user_id + ".png"));
@@ -386,6 +389,8 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter {
             final String access_token = sharedPreferences.getString("access_token", "");
 
             String formattedBody = Html.fromHtml(body).toString();
+
+            Log.e(TAG,formattedBody);
 
             recyclerHolder.commenterUserNameTextView.setText(username);
             recyclerHolder.commentBodyTextView.setText(formattedBody);
