@@ -18,14 +18,14 @@
         <ImageView
             android:scaleType="fitCenter"
             android:adjustViewBounds="true"
-            android:maxHeight="36dp"
-            android:maxWidth="36dp"
+            android:maxHeight="40dp"
+            android:maxWidth="40dp"
             android:id="@+id/publisher_avatar"
             android:layout_alignParentTop="true"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
-            android:layout_width="36dp"
-            android:layout_height="36dp" />
+            android:layout_width="40dp"
+            android:layout_height="40dp" />
 
         <TextView
             android:id="@+id/title"

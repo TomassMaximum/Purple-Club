@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -32,6 +33,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import jp.wasabeef.recyclerview.adapters.SlideInRightAnimationAdapter;
+
 /**
  * Created by Tom on 2016/1/25.
  */
@@ -47,7 +50,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
     public static int page;
 
-    protected RecyclerView recyclerView;
+    protected MyRecyclerView recyclerView;
     protected RecyclerViewAdapter myAdapter;
     protected RecyclerView.LayoutManager layoutManager;
     SharedPreferences sharedPreferences;
@@ -92,20 +95,13 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
             }
         });
 
-        recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
+        recyclerView = (MyRecyclerView) rootView.findViewById(R.id.recycler_view);
 
         layoutManager = new LinearLayoutManager(getActivity());
 
         recyclerView.setLayoutManager(layoutManager);
 
         myHandler = new MyHandler(this);
-
-//        page = getArguments().getInt("position");
-//        String drawerPosition = getArguments().getString("drawerPosition");
-//
-//        myAdapter = new RecyclerViewAdapter(this,page,drawerPosition);
-//
-//        recyclerView.setAdapter(myAdapter);
 
         return rootView;
     }
@@ -423,37 +419,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         values.put("type", type);
                         values.put("pro", pro);
 
-                        boolean flag = checkData(db,shot_id);
-
-                        db.insert(tableName,null,values);
-
-                        //如果标记为true，证明本地文件中存在该作品的图片和作者头像，不用再次请求，continue下一条信息。
-                        if (flag){
-                            //更新本地数据库中的数据
-                            db.update(tableName, values, "shot_id=?", new String[]{shot_id});
-                            continue;
-                        }
-
-                        //如果数据不存在数据库中，向网络请求用户头像和作品图片
-                        InputStream avatarIn;
-                        avatarIn = new URL(avatar_url).openStream();
-                        Bitmap avatar = BitmapFactory.decodeStream(avatarIn);
-                        avatarIn.close();
-
-                        InputStream imageIn;
-                        imageIn = new URL(image_normal_url).openStream();
-                        Bitmap image_small = BitmapFactory.decodeStream(imageIn);
-                        imageIn.close();
-
-                        //将请求到的作者头像和作品小图保存到本地
-                        FileOutputStream avatarOut = getActivity().openFileOutput("avatar" + shot_id + ".png", getActivity().MODE_PRIVATE);
-                        avatar.compress(Bitmap.CompressFormat.PNG,100,avatarOut);
-                        avatarOut.close();
-
-                        FileOutputStream imageOut = getActivity().openFileOutput("image_small" + shot_id + ".png",getActivity().MODE_PRIVATE);
-                        image_small.compress(Bitmap.CompressFormat.PNG,100,imageOut);
-                        imageOut.close();
-
+                        db.update(tableName, values, "shot_id=?", new String[]{shot_id});
                     }
                     db.close();
 
@@ -467,63 +433,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                     e.printStackTrace();
                 }
             }
-
-            public boolean checkData(SQLiteDatabase db,String shot_id){
-                //通过id判断数据库中是否已经有此条记录，有则置标记为true
-                boolean flag = false;
-                Cursor popularityCursor = db.query(POPULARITY_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
-                Cursor recentCursor = db.query(RECENT_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
-                Cursor viewsCursor = db.query(VIEWS_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
-                Cursor commentsCursor = db.query(COMMENTS_SHOTS,new String[]{"shot_id"},null,null,null,null,null);
-                if (popularityCursor.moveToFirst()){
-                    do {
-                        String id = popularityCursor.getString(popularityCursor.getColumnIndex("shot_id"));
-
-                        if (id.equals(shot_id)) {
-                            flag = true;
-                            break;
-                        }
-                    }while (popularityCursor.moveToNext());
-                }
-                popularityCursor.close();
-                if (recentCursor.moveToFirst()){
-                    do {
-                        String id = recentCursor.getString(recentCursor.getColumnIndex("shot_id"));
-
-                        if (id.equals(shot_id)) {
-                            flag = true;
-                            break;
-                        }
-                    }while (recentCursor.moveToNext());
-                }
-                recentCursor.close();
-                if (viewsCursor.moveToFirst()){
-                    do {
-                        String id = viewsCursor.getString(viewsCursor.getColumnIndex("shot_id"));
-
-                        if (id.equals(shot_id)) {
-                            flag = true;
-                            break;
-                        }
-                    }while (viewsCursor.moveToNext());
-                }
-                viewsCursor.close();
-                if (commentsCursor.moveToFirst()){
-                    do {
-                        String id = commentsCursor.getString(commentsCursor.getColumnIndex("shot_id"));
-
-                        if (id.equals(shot_id)) {
-                            flag = true;
-                            break;
-                        }
-                    }while (commentsCursor.moveToNext());
-                }
-                commentsCursor.close();
-                return flag;
-            }
-
         }).start();
-
     }
 
     private class MyHandler extends Handler{
@@ -539,6 +449,9 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
             String drawerPosition = getArguments().getString("drawerPosition");
 
             myAdapter = new RecyclerViewAdapter(fragmentPage,page,drawerPosition);
+
+            SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(myAdapter);
+            slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
 
             recyclerView.setAdapter(myAdapter);
 

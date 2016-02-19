@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
@@ -19,6 +20,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.display.CircleBitmapDisplayer;
+import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
+import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,6 +35,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by Tom on 2016/1/25.
@@ -41,10 +53,27 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     int page;
     String drawerPosition;
 
+    private DisplayImageOptions optionsPicture;
+    private DisplayImageOptions optionsAvatar;
+    private ImageLoadingListener animateFirstListener = new AnimateFirstDisplayListener();
+
     RecyclerViewAdapter(FragmentPage fragmentPage,int page,String drawerPosition){
         this.fragmentPage = fragmentPage;
         this.page = page;
         this.drawerPosition = drawerPosition;
+
+        optionsAvatar = new DisplayImageOptions.Builder()
+                .cacheInMemory(true)
+                .cacheOnDisk(true)
+                .displayer(new CircleBitmapDisplayer(Color.WHITE,5))
+                .build();
+
+        optionsPicture = new DisplayImageOptions.Builder()
+                .cacheInMemory(true)
+                .cacheOnDisk(true)
+                .considerExifParams(true)
+                .displayer(new FadeInBitmapDisplayer(300))
+                .build();
     }
 
     class RecyclerHolder extends RecyclerView.ViewHolder{
@@ -227,16 +256,16 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             final String likes_count = cursor.getString(cursor.getColumnIndex("likes_count"));
             final String created_at = cursor.getString(cursor.getColumnIndex("created_at"));
 
-            try {
-                Bitmap avatar = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("avatar" + shot_id + ".png"));
-                Drawable roundAvatarDrawable = new RoundImage(avatar);
-                recyclerHolder.avatarImageView.setImageDrawable(roundAvatarDrawable);
-
-                Bitmap image_small = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("image_small" + shot_id + ".png"));
-                recyclerHolder.pictureImageView.setImageBitmap(image_small);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                Bitmap avatar = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("avatar" + shot_id + ".png"));
+//                Drawable roundAvatarDrawable = new RoundImage(avatar);
+//                recyclerHolder.avatarImageView.setImageDrawable(roundAvatarDrawable);
+//
+//                Bitmap image_small = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("image_small" + shot_id + ".png"));
+//                recyclerHolder.pictureImageView.setImageBitmap(image_small);
+//            } catch (FileNotFoundException e) {
+//                e.printStackTrace();
+//            }
 
             final SharedPreferences sharedPreferences = fragmentPage.getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
             final String access_token = sharedPreferences.getString("access_token","");
@@ -245,6 +274,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             recyclerHolder.viewsCountTextView.setText(views_count);
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
+
+            ImageLoader imageLoader = ImageLoader.getInstance();
+            imageLoader.init(ImageLoaderConfiguration.createDefault(fragmentPage.getContext()));
+            imageLoader.displayImage(image_small_url, recyclerHolder.pictureImageView, optionsPicture, animateFirstListener);
+            imageLoader.displayImage(avatar_url,recyclerHolder.avatarImageView,optionsAvatar,animateFirstListener);
 
             boolean liked = sharedPreferences.getBoolean(shot_id + "liked",false);
             if (!liked){
@@ -298,6 +332,23 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     @Override
     public int getItemCount() {
         return 12;
+    }
+
+    private static class AnimateFirstDisplayListener extends SimpleImageLoadingListener {
+
+        static final List<String> displayedImages = Collections.synchronizedList(new LinkedList<String>());
+
+        @Override
+        public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+            if (loadedImage != null) {
+                ImageView imageView = (ImageView) view;
+                boolean firstDisplay = !displayedImages.contains(imageUri);
+                if (firstDisplay) {
+                    FadeInBitmapDisplayer.animate(imageView, 500);
+                    displayedImages.add(imageUri);
+                }
+            }
+        }
     }
 
     public void likeClicked(String shot_id,String access_token,RecyclerHolder recyclerHolder,String likesCount,SharedPreferences sharedPreferences){
