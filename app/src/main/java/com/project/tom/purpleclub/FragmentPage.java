@@ -20,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,8 +33,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 import jp.wasabeef.recyclerview.adapters.SlideInRightAnimationAdapter;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * Created by Tom on 2016/1/25.
@@ -49,6 +54,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     public String tableName;
 
     public static int page;
+    public static int fragmentPosition;
 
     protected MyRecyclerView recyclerView;
     protected RecyclerViewAdapter myAdapter;
@@ -59,9 +65,16 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     SwipeRefreshLayout swipeRefreshLayout;
     String shotsUrl;
 
+    OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(25, TimeUnit.SECONDS)
+            .writeTimeout(25, TimeUnit.SECONDS)
+            .readTimeout(25, TimeUnit.SECONDS)
+            .build();
+
     public FragmentPage(){}
 
     public static FragmentPage newInstance(int position,String drawerPosition){
+        fragmentPosition = position;
 
         FragmentPage fragmentPage = new FragmentPage();
         Bundle args = new Bundle();
@@ -86,20 +99,28 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         swipeRefreshLayout.setOnRefreshListener(this);
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
 
-        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                rootView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                swipeRefreshLayout.setRefreshing(true);
-                onRefresh();
-            }
-        });
+//        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+//            @Override
+//            public void onGlobalLayout() {
+//                rootView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+//                swipeRefreshLayout.setRefreshing(true);
+//                onRefresh();
+//            }
+//        });
 
         recyclerView = (MyRecyclerView) rootView.findViewById(R.id.recycler_view);
 
         layoutManager = new LinearLayoutManager(getActivity());
 
         recyclerView.setLayoutManager(layoutManager);
+
+        String drawerPosition = getArguments().getString("drawerPosition");
+        int position = getArguments().getInt("position");
+        Log.e(TAG,"位置为：" + position);
+        myAdapter = new RecyclerViewAdapter(this,position,drawerPosition);
+        SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(myAdapter);
+        slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
+        recyclerView.setAdapter(slideInRightAnimationAdapter);
 
         myHandler = new MyHandler(this);
 
@@ -280,25 +301,14 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
             }
         }
 
+        Log.e(TAG, shotsUrl);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
-                HttpURLConnection connection;
                 try {
-                    URL url = new URL(shotsUrl);
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setRequestMethod("GET");
-                    connection.setConnectTimeout(8000);
-                    connection.setReadTimeout(8000);
-                    InputStream in = connection.getInputStream();
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
-                    StringBuilder stringBuilder = new StringBuilder();
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null){
-                        stringBuilder.append(line);
-                    }
-                    String response = stringBuilder.toString();
-
+                    String response = getJSONFromAPI(shotsUrl);
+                    Log.e(TAG, response);
                     JSONArray shotsArray = new JSONArray(response);
 
                     myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,5);
@@ -419,21 +429,34 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         values.put("type", type);
                         values.put("pro", pro);
 
+                        db.insert(tableName,null,values);
                         db.update(tableName, values, "shot_id=?", new String[]{shot_id});
                     }
                     db.close();
 
                     Message message = new Message();
+                    message.what = 1;
                     myHandler.sendMessage(message);
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Log.e(TAG,"获取数据出错");
+                    Log.e(TAG, "获取数据出错");
+                    Message message = new Message();
+                    message.what = -1;
+                    myHandler.sendMessage(message);
                     //Toast.makeText(getActivity(), "请求数据出错，请重试", Toast.LENGTH_SHORT).show();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+
             }
         }).start();
+
+    }
+
+    String getJSONFromAPI(String url) throws IOException {
+        Request request = new Request.Builder().url(url).build();
+        Response response = client.newCall(request).execute();
+        return response.body().string();
     }
 
     private class MyHandler extends Handler{
@@ -441,21 +464,25 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         public MyHandler(FragmentPage fragmentPage){
             this.fragmentPage = fragmentPage;
         }
+        int success;
 
         @Override
         public void handleMessage(Message msg) {
             page = getArguments().getInt("position");
-
             String drawerPosition = getArguments().getString("drawerPosition");
 
-            myAdapter = new RecyclerViewAdapter(fragmentPage,page,drawerPosition);
+            success = msg.what;
+            if (success != -1){
+                myAdapter = new RecyclerViewAdapter(fragmentPage,page,drawerPosition);
+                SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(myAdapter);
+                slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
+                recyclerView.setAdapter(slideInRightAnimationAdapter);
+                swipeRefreshLayout.setRefreshing(false);
+            }else {
+                Toast.makeText(fragmentPage.getActivity(), "网络请求出现问题，请重试。", Toast.LENGTH_SHORT).show();
+                swipeRefreshLayout.setRefreshing(false);
+            }
 
-            SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(myAdapter);
-            slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
-
-            recyclerView.setAdapter(myAdapter);
-
-            swipeRefreshLayout.setRefreshing(false);
 
         }
     }

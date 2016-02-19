@@ -1,14 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.SwipeRefreshLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/swipe_refresh_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
-    <com.project.tom.purpleclub.MyRecyclerView
-        android:id="@+id/comments_recycler_view"
-        android:layout_marginTop="8dp"
+    <android.support.v4.widget.SwipeRefreshLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_marginBottom="48dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent">
 
-</android.support.v4.widget.SwipeRefreshLayout>
+        <com.project.tom.purpleclub.MyRecyclerView
+            android:id="@+id/comments_recycler_view"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <LinearLayout
+        android:layout_alignParentBottom="true"
+        android:background="@color/white"
+        android:elevation="4dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_marginTop="11dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:maxHeight="24dp"
+            android:maxWidth="24dp"
+            android:src="@drawable/bubble"
+            android:id="@+id/comment_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp" />
+
+        <EditText
+            android:id="@+id/my_comment_body"
+            android:hint="输入评论"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content" />
+
+        <ImageView
+            android:layout_marginTop="11dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="12dp"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:maxHeight="24dp"
+            android:maxWidth="24dp"
+            android:src="@drawable/arrow_right"
+            android:id="@+id/send_comment_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp" />
+
+    </LinearLayout>
+
+</RelativeLayout>

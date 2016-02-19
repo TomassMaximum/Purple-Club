@@ -47,6 +47,8 @@ public class Contract {
 
     public static final String COMMENTS_TWO = "/comments";
 
+    public static final String COMMENT_BODY = "body=";
+
     private String id;
     private String name;
     private String username;

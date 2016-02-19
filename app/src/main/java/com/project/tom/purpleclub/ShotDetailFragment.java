@@ -19,6 +19,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -84,6 +85,7 @@ public class ShotDetailFragment extends Fragment {
     private DisplayImageOptions optionsAvatar;
     private DisplayImageOptions optionsImage;
     AnimateFirstDisplayListener animateFirstDisplayListener = new AnimateFirstDisplayListener();
+    ImageLoader imageLoader = ImageLoader.getInstance();
 
     public static ShotDetailFragment newInstance(String shotId){
         shot_id = shotId;
@@ -94,6 +96,7 @@ public class ShotDetailFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        imageLoader.init(ImageLoaderConfiguration.createDefault(getContext()));
     }
 
     @Nullable
@@ -185,6 +188,7 @@ public class ShotDetailFragment extends Fragment {
             likesIconImageView.setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_ATOP);
         }
 
+        viewsCountTextView.setTextColor(getResources().getColor(R.color.black));
         viewsIconImageView.setColorFilter(getResources().getColor(R.color.black), PorterDuff.Mode.SRC_ATOP);
 
         //用户点击喜欢图标或按钮，向服务器post一个喜欢请求或取消一个喜欢。
@@ -197,7 +201,7 @@ public class ShotDetailFragment extends Fragment {
         likesIconImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                likeClicked(shot_id, access_token,likesCount,sharedPreferences);
+                likeClicked(shot_id, access_token, likesCount, sharedPreferences);
             }
         });
 
@@ -209,13 +213,13 @@ public class ShotDetailFragment extends Fragment {
         descriptionTextView.setText(stringDescription);
 
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("shot_comments_count",commentsCount);
+        editor.putString("shot_comments_count", commentsCount);
         editor.apply();
 
         optionsImage = new DisplayImageOptions.Builder()
                 .cacheOnDisk(true)
                 .imageScaleType(ImageScaleType.EXACTLY)
-                .displayer(new FadeInBitmapDisplayer(1500))
+                .displayer(new FadeInBitmapDisplayer(3000))
                 .build();
 
         optionsAvatar = new DisplayImageOptions.Builder()
@@ -232,11 +236,10 @@ public class ShotDetailFragment extends Fragment {
             image_url = image_small_url;
         }
 
-        ImageLoader imageLoader = ImageLoader.getInstance();
-        imageLoader.init(ImageLoaderConfiguration.createDefault(getContext()));
         imageLoader.displayImage(avatar_url, avatarImageView,optionsAvatar,animateFirstDisplayListener);
-        imageLoader.displayImage(image_url,pictureImageView,optionsImage,animateFirstDisplayListener);
+        imageLoader.displayImage(image_url, pictureImageView, optionsImage, animateFirstDisplayListener);
 
+        //container.addView(pictureImageView);
 
         return rootView;
     }

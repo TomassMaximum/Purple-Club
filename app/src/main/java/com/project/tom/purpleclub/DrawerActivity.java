@@ -179,13 +179,6 @@ public class DrawerActivity extends AppCompatActivity
             transaction.add(R.id.fragment_container, fragmentContainer);
             transaction.commit();
         }
-//        if (savedInstanceState == null) {
-//            navigationView.setCheckedItem(R.id.nav_new_data);
-//            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-//            FragmentPage fragment = new FragmentPage();
-//            transaction.replace(R.id.fragment_container, fragment);
-//            transaction.commit();
-//        }
     }
 
     @Override

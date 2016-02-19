@@ -56,11 +56,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     private DisplayImageOptions optionsPicture;
     private DisplayImageOptions optionsAvatar;
     private ImageLoadingListener animateFirstListener = new AnimateFirstDisplayListener();
+    ImageLoader imageLoader = ImageLoader.getInstance();
 
     RecyclerViewAdapter(FragmentPage fragmentPage,int page,String drawerPosition){
         this.fragmentPage = fragmentPage;
         this.page = page;
         this.drawerPosition = drawerPosition;
+
+        imageLoader.init(ImageLoaderConfiguration.createDefault(fragmentPage.getContext()));
 
         optionsAvatar = new DisplayImageOptions.Builder()
                 .cacheInMemory(true)
@@ -72,7 +75,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
                 .cacheInMemory(true)
                 .cacheOnDisk(true)
                 .considerExifParams(true)
-                .displayer(new FadeInBitmapDisplayer(300))
+                .displayer(new FadeInBitmapDisplayer(2000))
                 .build();
     }
 
@@ -275,10 +278,9 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
 
-            ImageLoader imageLoader = ImageLoader.getInstance();
-            imageLoader.init(ImageLoaderConfiguration.createDefault(fragmentPage.getContext()));
             imageLoader.displayImage(image_small_url, recyclerHolder.pictureImageView, optionsPicture, animateFirstListener);
-            imageLoader.displayImage(avatar_url,recyclerHolder.avatarImageView,optionsAvatar,animateFirstListener);
+            imageLoader.displayImage(avatar_url, recyclerHolder.avatarImageView, optionsAvatar, animateFirstListener);
+
 
             boolean liked = sharedPreferences.getBoolean(shot_id + "liked",false);
             if (!liked){

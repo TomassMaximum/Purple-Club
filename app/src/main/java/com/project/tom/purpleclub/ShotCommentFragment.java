@@ -35,6 +35,7 @@ import android.view.animation.AnticipateInterpolator;
 import android.view.animation.BounceInterpolator;
 import android.view.animation.CycleInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -66,12 +67,18 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import jp.wasabeef.recyclerview.adapters.AlphaInAnimationAdapter;
 import jp.wasabeef.recyclerview.adapters.ScaleInAnimationAdapter;
 import jp.wasabeef.recyclerview.adapters.SlideInBottomAnimationAdapter;
 import jp.wasabeef.recyclerview.adapters.SlideInRightAnimationAdapter;
 import jp.wasabeef.recyclerview.animators.SlideInUpAnimator;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 /**
  * Created by Tom on 2016/2/17.
@@ -79,17 +86,34 @@ import jp.wasabeef.recyclerview.animators.SlideInUpAnimator;
 public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener{
 
     private static final String TAG = "ShotCommentFragment";
+    public static final MediaType JSON
+            = MediaType.parse("application/json; charset=utf-8");
+    public static final int SEND_COMMENT_SUCCESS = -2;
+    public static final int SEND_COMMENT_FAILED = -3;
 
     MyRecyclerView recyclerView;
     CommentRecyclerViewAdapter commentRecyclerViewAdapter;
     SwipeRefreshLayout swipeRefreshLayout;
     MyHandler myHandler;
 
+    ImageView comment_icon_image_view;
+    ImageView send_comment_icon_image_view;
+    EditText my_comment_edit_text;
+
+    String access_token;
+    String myComment;
     String commentsCount;
     static String shot_id;
     SharedPreferences sharedPreferences;
     MyDatabaseHelper myDatabaseHelper;
     SQLiteDatabase db;
+    OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .build();
+
+    OkHttpClient postClient = new OkHttpClient();
 
     public static ShotCommentFragment newInstance(String shotID){
         shot_id = shotID;
@@ -105,11 +129,93 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_shot_comments,container,false);
+        sharedPreferences = getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
+        access_token = sharedPreferences.getString("access_token", "");
+        commentsCount = sharedPreferences.getString("shot_comments_count", "0");
+
+        comment_icon_image_view = (ImageView) rootView.findViewById(R.id.comment_icon);
+        send_comment_icon_image_view = (ImageView) rootView.findViewById(R.id.send_comment_icon);
+        my_comment_edit_text = (EditText) rootView.findViewById(R.id.my_comment_body);
+
+        myHandler = new MyHandler(this);
+
+        send_comment_icon_image_view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                myComment = my_comment_edit_text.getText().toString();
+                String escapedHTML = Html.escapeHtml(myComment);
+
+                final String comment_body = "{\"body\":\"" + escapedHTML + "\"}";
+                final String postCommentURL = Contract.BASE_URL + shot_id + Contract.COMMENTS + Contract.ACCESS_TOKEN + access_token;
+
+                myDatabaseHelper = new MyDatabaseHelper(getActivity(),"comments",null,5);
+                db = myDatabaseHelper.getWritableDatabase();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String JSONCommentResponse = postJSONToAPI(postCommentURL, comment_body);
+                            JSONObject commentObject = new JSONObject(JSONCommentResponse);
+
+                            String comment_id = commentObject.getString("id");
+                            String body = commentObject.getString("body");
+                            String created_at = commentObject.getString("created_at");
+                            String likes_count = commentObject.getString("likes_count");
+
+                            JSONObject userObject = commentObject.getJSONObject("user");
+                            String username = userObject.getString("username");
+                            String avatar_url = userObject.getString("avatar_url");
+                            String user_id = userObject.getString("id");
+
+                            ContentValues contentValues = new ContentValues();
+                            contentValues.put("comment_id", comment_id);
+                            contentValues.put("body", body);
+                            contentValues.put("created_at", created_at);
+                            contentValues.put("username", username);
+                            contentValues.put("avatar_url", avatar_url);
+                            contentValues.put("likes_count", likes_count);
+                            contentValues.put("user_id", user_id);
+
+                            db.insert("comments", null, contentValues);
+
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            int i = Integer.parseInt(commentsCount) + 1;
+                            editor.putString("comment_id" + i, comment_id);
+                            editor.apply();
+                            db.close();
+                            Log.e(TAG, "评论添加完毕");
+
+                            Message message = new Message();
+                            message.what = SEND_COMMENT_SUCCESS;
+                            myHandler.sendMessage(message);
+
+                        } catch (IOException | JSONException e) {
+                            e.printStackTrace();
+                            Message message = new Message();
+                            message.what = SEND_COMMENT_FAILED;
+                            myHandler.sendMessage(message);
+                        }
+                    }
+                }).start();
+            }
+        });
+
+        comment_icon_image_view.setColorFilter(getResources().getColor(R.color.black), PorterDuff.Mode.SRC_ATOP);
+        send_comment_icon_image_view.setColorFilter(getResources().getColor(R.color.black), PorterDuff.Mode.SRC_ATOP);
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(this);
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
 
+        refreshAutomatically(rootView, swipeRefreshLayout);
+
+        Log.e(TAG, commentsCount);
+        recyclerView = (MyRecyclerView) rootView.findViewById(R.id.comments_recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        return rootView;
+    }
+
+    private void refreshAutomatically(final View rootView,final SwipeRefreshLayout swipeRefreshLayout){
         rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -118,13 +224,6 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
                 onRefresh();
             }
         });
-
-        sharedPreferences = getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
-        commentsCount = sharedPreferences.getString("shot_comments_count", "0");
-
-        Log.e(TAG, commentsCount);
-        recyclerView = (MyRecyclerView) rootView.findViewById(R.id.comments_recycler_view);
-        return rootView;
     }
 
     @Override
@@ -132,30 +231,17 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         Log.e(TAG, "onRefresh执行");
         myHandler = new MyHandler(this);
         String access_token = sharedPreferences.getString("access_token","");
-        commentsCount = sharedPreferences.getString("shot_comments_count","");
+        commentsCount = sharedPreferences.getString("shot_comments_count", "");
         myDatabaseHelper = new MyDatabaseHelper(getActivity(),"comments",null,5);
         db = myDatabaseHelper.getWritableDatabase();
         final String stringUrl = Contract.BASE_URL + shot_id + Contract.COMMENTS + Contract.ACCESS_TOKEN + access_token;
         Log.e(TAG,stringUrl);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
-                HttpURLConnection connection;
                 try {
-                    URL url = new URL(stringUrl);
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setRequestMethod("GET");
-                    connection.setConnectTimeout(8000);
-                    connection.setReadTimeout(8000);
-                    InputStream inputStream = connection.getInputStream();
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                    StringBuilder stringBuilder = new StringBuilder();
-                    String line;
-                    while((line = bufferedReader.readLine()) != null){
-                        stringBuilder.append(line);
-                    }
-                    String responseComments = stringBuilder.toString();
-
+                    String responseComments = getJSONFromAPI(stringUrl);
                     JSONArray commentsArray = new JSONArray(responseComments);
 
                     for (int i = 0;i < commentsArray.length();i++){
@@ -195,10 +281,49 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
                     myHandler.sendMessage(message);
 
                 } catch (IOException | JSONException e) {
+                    Message message = new Message();
+                    message.what = -1;
+                    myHandler.sendMessage(message);
                     e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    String getJSONFromAPI(String url) throws IOException {
+        Request request = new Request.Builder().url(url).build();
+        Response response = client.newCall(request).execute();
+        return response.body().string();
+    }
+
+    String postJSONToAPI(String url, String json) throws IOException {
+        RequestBody body = RequestBody.create(JSON, json);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        Response response = postClient.newCall(request).execute();
+        return response.body().string();
+    }
+
+    private class SendCommentHandler extends Handler{
+
+        ShotCommentFragment shotCommentFragment;
+
+        public SendCommentHandler(ShotCommentFragment shotCommentFragment){
+            this.shotCommentFragment = shotCommentFragment;
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            int result = msg.what;
+            if (result == SEND_COMMENT_SUCCESS){
+                Toast.makeText(shotCommentFragment.getActivity(), "评论发送成功", Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(shotCommentFragment.getActivity(), "评论发送失败", Toast.LENGTH_SHORT).show();
+                my_comment_edit_text.setText(myComment);
+            }
+        }
     }
 
     private class MyHandler extends Handler {
@@ -212,12 +337,20 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         @Override
         public void handleMessage(Message msg) {
             int comments_count = msg.what;
-            commentRecyclerViewAdapter = new CommentRecyclerViewAdapter(shotCommentFragment,shot_id,comments_count);
-            recyclerView.setLayoutManager(new LinearLayoutManager(shotCommentFragment.getActivity()));
-            SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(commentRecyclerViewAdapter);
-            slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
-            recyclerView.setAdapter(slideInRightAnimationAdapter);
-            swipeRefreshLayout.setRefreshing(false);
+            if (comments_count != -1) {
+                commentRecyclerViewAdapter = new CommentRecyclerViewAdapter(shotCommentFragment, shot_id, comments_count);
+                recyclerView.setLayoutManager(new LinearLayoutManager(shotCommentFragment.getActivity()));
+                SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(commentRecyclerViewAdapter);
+                slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
+                recyclerView.setAdapter(slideInRightAnimationAdapter);
+                swipeRefreshLayout.setRefreshing(false);
+            }else {
+                if (getActivity() != null){
+                    Toast.makeText(getActivity(), "网络请求出现问题，请重试。", Toast.LENGTH_SHORT).show();
+                }
+                swipeRefreshLayout.setRefreshing(false);
+            }
+
         }
     }
 }
@@ -241,14 +374,21 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter {
     MyDatabaseHelper myDatabaseHelper;
     SQLiteDatabase db;
     Cursor cursor;
+    Context context;
 
     private DisplayImageOptions options;
     private ImageLoadingListener animateFirstListener = new AnimateFirstDisplayListener();
+    ImageLoader imageLoader = ImageLoader.getInstance();
 
     public CommentRecyclerViewAdapter(ShotCommentFragment shotCommentFragment, String shot_id, int comments_count) {
         this.shotCommentFragment = shotCommentFragment;
         this.shot_id = shot_id;
         this.comments_count = comments_count;
+
+        context = shotCommentFragment.getContext();
+        if (context != null){
+            imageLoader.init(ImageLoaderConfiguration.createDefault(context));
+        }
 
         options = new DisplayImageOptions.Builder()
                 .cacheInMemory(true)
@@ -332,8 +472,6 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter {
         recyclerHolder.commentBodyTextView.setText(formattedBody);
         recyclerHolder.likesCountTextView.setText(likes_count);
 
-        ImageLoader imageLoader = ImageLoader.getInstance();
-        imageLoader.init(ImageLoaderConfiguration.createDefault(shotCommentFragment.getContext()));
         imageLoader.displayImage(avatar_url,recyclerHolder.commenterAvatarImageView,options,animateFirstListener);
         boolean liked = sharedPreferences.getBoolean(comment_id + "liked", false);
         if (!liked) {
@@ -382,8 +520,8 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter {
     }
 
     public void likeClicked(String comment_id,String shot_id,String access_token,String likesCount,SharedPreferences sharedPreferences,CommentRecyclerViewHolder recyclerHolder){
-        Log.e(TAG,"被点击了");
-        boolean liked = sharedPreferences.getBoolean(comment_id + "liked",false);
+        Log.e(TAG, "被点击了");
+        boolean liked = sharedPreferences.getBoolean(comment_id + "liked", false);
         if (!liked){
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean(comment_id + "liked",true);
