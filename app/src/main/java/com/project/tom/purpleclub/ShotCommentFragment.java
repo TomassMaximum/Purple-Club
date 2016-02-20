@@ -35,6 +35,7 @@ import android.view.animation.AnticipateInterpolator;
 import android.view.animation.BounceInterpolator;
 import android.view.animation.CycleInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -95,6 +96,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
     CommentRecyclerViewAdapter commentRecyclerViewAdapter;
     SwipeRefreshLayout swipeRefreshLayout;
     MyHandler myHandler;
+    SendCommentHandler sendCommentHandler;
 
     ImageView comment_icon_image_view;
     ImageView send_comment_icon_image_view;
@@ -137,13 +139,20 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         send_comment_icon_image_view = (ImageView) rootView.findViewById(R.id.send_comment_icon);
         my_comment_edit_text = (EditText) rootView.findViewById(R.id.my_comment_body);
 
-        myHandler = new MyHandler(this);
+        sendCommentHandler = new SendCommentHandler(this);
 
         send_comment_icon_image_view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 myComment = my_comment_edit_text.getText().toString();
                 String escapedHTML = Html.escapeHtml(myComment);
+
+                View view = getActivity().getCurrentFocus();
+                if (view != null){
+                    InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(),0);
+                }
+                my_comment_edit_text.setText("");
 
                 final String comment_body = "{\"body\":\"" + escapedHTML + "\"}";
                 final String postCommentURL = Contract.BASE_URL + shot_id + Contract.COMMENTS + Contract.ACCESS_TOKEN + access_token;
@@ -187,16 +196,18 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
 
                             Message message = new Message();
                             message.what = SEND_COMMENT_SUCCESS;
-                            myHandler.sendMessage(message);
+                            sendCommentHandler.sendMessage(message);
 
                         } catch (IOException | JSONException e) {
                             e.printStackTrace();
                             Message message = new Message();
                             message.what = SEND_COMMENT_FAILED;
-                            myHandler.sendMessage(message);
+                            sendCommentHandler.sendMessage(message);
                         }
                     }
                 }).start();
+
+                onRefresh();
             }
         });
 
@@ -320,7 +331,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
             if (result == SEND_COMMENT_SUCCESS){
                 Toast.makeText(shotCommentFragment.getActivity(), "评论发送成功", Toast.LENGTH_SHORT).show();
             }else {
-                Toast.makeText(shotCommentFragment.getActivity(), "评论发送失败", Toast.LENGTH_SHORT).show();
+                Toast.makeText(shotCommentFragment.getActivity(), "抱歉，您没有评论权限", Toast.LENGTH_SHORT).show();
                 my_comment_edit_text.setText(myComment);
             }
         }
