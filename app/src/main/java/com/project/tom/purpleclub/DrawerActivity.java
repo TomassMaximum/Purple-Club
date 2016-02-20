@@ -1,5 +1,6 @@
 package com.project.tom.purpleclub;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
@@ -11,6 +12,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -18,6 +20,8 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.transition.Transition;
+import android.transition.TransitionInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -62,106 +66,17 @@ public class DrawerActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drawer);
+
+        Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.shared_element_transition);
+        transition.excludeTarget(R.id.toolbar,true);
+        transition.excludeTarget(R.id.tab_layout,true);
+        getWindow().setSharedElementExitTransition(transition);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close){
-
-            //当用户点击特定项时，引导用户进行登录。
-            @Override
-            public void onDrawerOpened(View drawerView) {
-
-                //找到用户头像，用户ID，用户描述三个控件
-                userAvatarImageView = (ImageView) findViewById(R.id.user_avatar);
-                userName = (TextView) findViewById(R.id.text_not_signed);
-                userDescription = (TextView) findViewById(R.id.text_press_to_sign_in);
-
-                //如果用户未登录，显示Dribbble的默认头像，点击引导用户进入登录界面进行授权
-                preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
-                Boolean signedIn = preferences.getBoolean("SignedIn",false);
-
-                if (!signedIn){
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Bitmap userAvatar = Utils.getResizedBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.dribbble_default_avatar),180,180);
-                            roundImage = new RoundImage(userAvatar);
-                            Message message = new Message();
-                            message.what = UPDATE_DRAWER;
-                            handler.sendMessage(message);
-                        }
-                    }).start();
-
-                    userDescription.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            onBackPressed();
-                            startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
-                        }
-                    });
-                    userAvatarImageView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            onBackPressed();
-                            startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
-                        }
-                    });
-                    userName.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            onBackPressed();
-                            startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
-                        }
-                    });
-
-                }else {
-                    String name = preferences.getString("username","");
-                    String html = preferences.getString("html_url","");
-                    userName.setText(name);
-                    userDescription.setText(html);
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            setLocalAvatar();
-                            Message message = new Message();
-                            message.what = UPDATE_AVATAR;
-                            handler.sendMessage(message);
-                        }
-                    }).start();
-
-                    userAvatarImageView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            startActivity(new Intent(DrawerActivity.this, PersonalInfoActivity.class));
-                        }
-                    });
-
-                    userName.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            startActivity(new Intent(DrawerActivity.this,PersonalInfoActivity.class));
-                        }
-                    });
-
-                    userDescription.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            String html_url = preferences.getString("html_url","");
-                            Intent intent = new Intent(Intent.ACTION_VIEW);
-                            intent.setData(Uri.parse(html_url));
-                            startActivity(intent);
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onDrawerClosed(View drawerView) {
-                super.onDrawerClosed(drawerView);
-            }
-        };
+        ActionBarDrawerToggle toggle = new DrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
 
         drawer.setDrawerListener(toggle);
         toggle.syncState();
@@ -178,6 +93,112 @@ public class DrawerActivity extends AppCompatActivity
             fragmentContainer.setArguments(args);
             transaction.add(R.id.fragment_container, fragmentContainer);
             transaction.commit();
+        }
+    }
+
+    private class DrawerToggle extends ActionBarDrawerToggle{
+
+        DrawerActivity drawerActivity;
+
+        public DrawerToggle(DrawerActivity activity, DrawerLayout drawerLayout, Toolbar toolbar, int openDrawerContentDescRes, int closeDrawerContentDescRes) {
+            super(activity, drawerLayout, toolbar, openDrawerContentDescRes, closeDrawerContentDescRes);
+            this.drawerActivity = activity;
+        }
+
+        //当用户点击特定项时，引导用户进行登录。
+        @Override
+        public void onDrawerOpened(View drawerView) {
+
+            //找到用户头像，用户ID，用户描述三个控件
+            userAvatarImageView = (ImageView) findViewById(R.id.user_avatar);
+            userName = (TextView) findViewById(R.id.text_not_signed);
+            userDescription = (TextView) findViewById(R.id.text_press_to_sign_in);
+
+            //如果用户未登录，显示Dribbble的默认头像，点击引导用户进入登录界面进行授权
+            preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
+            Boolean signedIn = preferences.getBoolean("SignedIn",false);
+
+            if (!signedIn){
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Bitmap userAvatar = Utils.getResizedBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.dribbble_default_avatar),180,180);
+                        roundImage = new RoundImage(userAvatar);
+                        Message message = new Message();
+                        message.what = UPDATE_DRAWER;
+                        handler.sendMessage(message);
+                    }
+                }).start();
+
+                userDescription.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        onBackPressed();
+                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                    }
+                });
+                userAvatarImageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        onBackPressed();
+                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                    }
+                });
+                userName.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        onBackPressed();
+                        startActivity(new Intent(getBaseContext(), AuthorizationActivity.class));
+                    }
+                });
+
+            }else {
+                String name = preferences.getString("username","");
+                String html = preferences.getString("html_url","");
+                userName.setText(name);
+                userDescription.setText(html);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setLocalAvatar();
+                        Message message = new Message();
+                        message.what = UPDATE_AVATAR;
+                        handler.sendMessage(message);
+                    }
+                }).start();
+
+                userAvatarImageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        v.setTransitionName("user_avatar");
+                        ActivityOptionsCompat activityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(drawerActivity,v,v.getTransitionName());
+
+                        startActivity(new Intent(DrawerActivity.this, PersonalInfoActivity.class), activityOptionsCompat.toBundle());
+                    }
+                });
+
+                userName.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(new Intent(DrawerActivity.this,PersonalInfoActivity.class));
+                    }
+                });
+
+                userDescription.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        String html_url = preferences.getString("html_url","");
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setData(Uri.parse(html_url));
+                        startActivity(intent);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onDrawerClosed(View drawerView) {
+            super.onDrawerClosed(drawerView);
         }
     }
 

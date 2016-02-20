@@ -6,6 +6,7 @@
     android:id="@+id/shot_detail_linear_layout">
 
     <ImageView
+        android:transitionName="shot_picture"
         android:id="@+id/shot_picture"
         android:scaleType="fitCenter"
         android:adjustViewBounds="true"
@@ -15,6 +16,7 @@
         android:background="@color/white"/>
 
     <ScrollView
+        android:id="@+id/shot_detail_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -46,6 +48,7 @@
                         android:layout_height="wrap_content">
 
                         <ImageView
+                            android:transitionName="user_avatar"
                             android:scaleType="fitCenter"
                             android:adjustViewBounds="true"
                             android:maxHeight="48dp"

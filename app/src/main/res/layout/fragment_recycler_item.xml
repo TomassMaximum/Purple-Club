@@ -16,6 +16,7 @@
         android:layout_height="wrap_content">
 
         <ImageView
+            android:transitionName="user_avatar"
             android:scaleType="fitCenter"
             android:adjustViewBounds="true"
             android:maxHeight="40dp"
@@ -47,6 +48,7 @@
             android:layout_height="wrap_content" />
 
         <ImageView
+            android:transitionName="shot_picture"
             android:id="@+id/picture"
             android:scaleType="centerCrop"
             android:layout_below="@+id/publisher_avatar"

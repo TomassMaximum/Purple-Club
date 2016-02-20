@@ -9,6 +9,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.transition.TransitionInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -50,6 +51,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        getWindow().setSharedElementEnterTransition(TransitionInflater.from(this).inflateTransition(R.transition.shared_element_transition));
 
         userAvatar = (ImageView) findViewById(R.id.user_avatar);
         sharedPreferences = getSharedPreferences("NerdPool",MODE_PRIVATE);

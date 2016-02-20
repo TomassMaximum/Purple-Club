@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -50,6 +51,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     SQLiteDatabase db;
     Bitmap image_small;
     RoundImage roundAvatarDrawable;
+    String finalImageUrl;
     int page;
     String drawerPosition;
 
@@ -126,7 +128,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,5);
 
         db = myDatabaseHelper.getWritableDatabase();
-        String[] projection = {"id","drawer_position","shot_id","title","avatar_url","image_small_url","views_count","comments_count","likes_count","created_at"};
+        String[] projection = {"id","drawer_position","shot_id","title","avatar_url","image_small_url","image_normal_url","views_count","comments_count","likes_count","created_at"};
 
         switch (drawerPosition){
             case "top":
@@ -254,6 +256,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             final String avatar_url = cursor.getString(cursor.getColumnIndex("avatar_url"));
             final String title = cursor.getString(cursor.getColumnIndex("title"));
             final String image_small_url = cursor.getString(cursor.getColumnIndex("image_small_url"));
+            final String image_normal_url = cursor.getString(cursor.getColumnIndex("image_normal_url"));
             final String views_count = cursor.getString(cursor.getColumnIndex("views_count"));
             final String comments_count = cursor.getString(cursor.getColumnIndex("comments_count"));
             final String likes_count = cursor.getString(cursor.getColumnIndex("likes_count"));
@@ -278,7 +281,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
 
-            imageLoader.displayImage(image_small_url, recyclerHolder.pictureImageView, optionsPicture, animateFirstListener);
+
+            if (image_normal_url != null){
+                finalImageUrl = image_normal_url;
+            }else {
+                finalImageUrl = image_small_url;
+            }
+
+            imageLoader.displayImage(finalImageUrl, recyclerHolder.pictureImageView, optionsPicture, animateFirstListener);
             imageLoader.displayImage(avatar_url, recyclerHolder.avatarImageView, optionsAvatar, animateFirstListener);
 
 
@@ -307,16 +317,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
                     likeClicked(shot_id, access_token,recyclerHolder,likes_count,sharedPreferences);
                 }
             });
-            recyclerHolder.pictureImageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(fragmentPage.getActivity(),ShotDetailActivity.class);
-                    intent.putExtra("shot_id",shot_id);
-                    intent.putExtra("title",title);
-                    fragmentPage.startActivity(intent);
-
-                }
-            });
+            recyclerHolder.pictureImageView.setOnClickListener(new ClickListener(shot_id,title,comments_count,fragmentPage));
 
             String timeZ = created_at.replaceAll("T","  ");
             String time = timeZ.replaceAll("Z","");
@@ -329,6 +330,33 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         cursor.close();
         db.close();
 
+    }
+
+    private class ClickListener implements View.OnClickListener{
+
+        String shot_id;
+        String title;
+        String comments_count;
+        FragmentPage fragmentPage;
+
+        ClickListener(String shot_id,String title,String comments_count,FragmentPage fragmentPage){
+            this.shot_id = shot_id;
+            this.title = title;
+            this.comments_count = comments_count;
+            this.fragmentPage = fragmentPage;
+        }
+
+        @Override
+        public void onClick(View v) {
+            v.setTransitionName("shot_picture");
+            ActivityOptionsCompat activityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(fragmentPage.getActivity(),v,v.getTransitionName());
+
+            Intent intent = new Intent(fragmentPage.getActivity(),ShotDetailActivity.class);
+            intent.putExtra("shot_id",shot_id);
+            intent.putExtra("title",title);
+            intent.putExtra("comments_count",comments_count);
+            fragmentPage.getActivity().startActivity(intent,activityOptionsCompat.toBundle());
+        }
     }
 
     @Override

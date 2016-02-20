@@ -14,12 +14,14 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Html;
+import android.transition.TransitionInflater;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -103,6 +105,8 @@ public class ShotDetailFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_shot_detail,container,false);
+
+        getActivity().getWindow().setSharedElementEnterTransition(TransitionInflater.from(getActivity()).inflateTransition(R.transition.shared_element_transition));
 
         avatarImageView = (ImageView) rootView.findViewById(R.id.publisher_avatar);
         pictureImageView = (ImageView) rootView.findViewById(R.id.shot_picture);
@@ -238,8 +242,6 @@ public class ShotDetailFragment extends Fragment {
 
         imageLoader.displayImage(avatar_url, avatarImageView,optionsAvatar,animateFirstDisplayListener);
         imageLoader.displayImage(image_url, pictureImageView, optionsImage, animateFirstDisplayListener);
-
-        //container.addView(pictureImageView);
 
         return rootView;
     }

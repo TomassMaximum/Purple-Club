@@ -92,7 +92,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
     public static final int SEND_COMMENT_SUCCESS = -2;
     public static final int SEND_COMMENT_FAILED = -3;
 
-    MyRecyclerView recyclerView;
+    RecyclerView recyclerView;
     CommentRecyclerViewAdapter commentRecyclerViewAdapter;
     SwipeRefreshLayout swipeRefreshLayout;
     MyHandler myHandler;
@@ -101,6 +101,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
     ImageView comment_icon_image_view;
     ImageView send_comment_icon_image_view;
     EditText my_comment_edit_text;
+    TextView no_shot_comments;
 
     String access_token;
     String myComment;
@@ -138,6 +139,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         comment_icon_image_view = (ImageView) rootView.findViewById(R.id.comment_icon);
         send_comment_icon_image_view = (ImageView) rootView.findViewById(R.id.send_comment_icon);
         my_comment_edit_text = (EditText) rootView.findViewById(R.id.my_comment_body);
+        no_shot_comments = (TextView) rootView.findViewById(R.id.no_shot_comments);
 
         sendCommentHandler = new SendCommentHandler(this);
 
@@ -221,7 +223,7 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         refreshAutomatically(rootView, swipeRefreshLayout);
 
         Log.e(TAG, commentsCount);
-        recyclerView = (MyRecyclerView) rootView.findViewById(R.id.comments_recycler_view);
+        recyclerView = (RecyclerView) rootView.findViewById(R.id.comments_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         return rootView;
     }
@@ -243,62 +245,68 @@ public class ShotCommentFragment extends Fragment implements SwipeRefreshLayout.
         myHandler = new MyHandler(this);
         String access_token = sharedPreferences.getString("access_token","");
         commentsCount = sharedPreferences.getString("shot_comments_count", "");
-        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"comments",null,5);
-        db = myDatabaseHelper.getWritableDatabase();
-        final String stringUrl = Contract.BASE_URL + shot_id + Contract.COMMENTS + Contract.ACCESS_TOKEN + access_token;
-        Log.e(TAG,stringUrl);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    String responseComments = getJSONFromAPI(stringUrl);
-                    JSONArray commentsArray = new JSONArray(responseComments);
+        if (commentsCount.equals("0")){
+            swipeRefreshLayout.setRefreshing(false);
+            no_shot_comments.setText("暂时没有评论");
+        }else {
+            myDatabaseHelper = new MyDatabaseHelper(getActivity(),"comments",null,5);
+            db = myDatabaseHelper.getWritableDatabase();
+            final String stringUrl = Contract.BASE_URL + shot_id + Contract.COMMENTS + Contract.ACCESS_TOKEN + access_token;
+            Log.e(TAG,stringUrl);
 
-                    for (int i = 0;i < commentsArray.length();i++){
-                        JSONObject commentObject = commentsArray.getJSONObject(i);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String responseComments = getJSONFromAPI(stringUrl);
+                        JSONArray commentsArray = new JSONArray(responseComments);
 
-                        String comment_id = commentObject.getString("id");
-                        String body = commentObject.getString("body");
-                        String created_at = commentObject.getString("created_at");
-                        String likes_count = commentObject.getString("likes_count");
+                        for (int i = 0;i < commentsArray.length();i++){
+                            JSONObject commentObject = commentsArray.getJSONObject(i);
 
-                        JSONObject userObject = commentObject.getJSONObject("user");
-                        String username = userObject.getString("username");
-                        String avatar_url = userObject.getString("avatar_url");
-                        String user_id = userObject.getString("id");
+                            String comment_id = commentObject.getString("id");
+                            String body = commentObject.getString("body");
+                            String created_at = commentObject.getString("created_at");
+                            String likes_count = commentObject.getString("likes_count");
 
-                        ContentValues contentValues = new ContentValues();
-                        contentValues.put("comment_id",comment_id);
-                        contentValues.put("body",body);
-                        contentValues.put("created_at",created_at);
-                        contentValues.put("username",username);
-                        contentValues.put("avatar_url",avatar_url);
-                        contentValues.put("likes_count", likes_count);
-                        contentValues.put("user_id", user_id);
+                            JSONObject userObject = commentObject.getJSONObject("user");
+                            String username = userObject.getString("username");
+                            String avatar_url = userObject.getString("avatar_url");
+                            String user_id = userObject.getString("id");
 
-                        db.insert("comments", null, contentValues);
+                            ContentValues contentValues = new ContentValues();
+                            contentValues.put("comment_id",comment_id);
+                            contentValues.put("body",body);
+                            contentValues.put("created_at",created_at);
+                            contentValues.put("username",username);
+                            contentValues.put("avatar_url",avatar_url);
+                            contentValues.put("likes_count", likes_count);
+                            contentValues.put("user_id", user_id);
 
-                        SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.putString("comment_id" + i,comment_id);
-                        editor.apply();
+                            db.insert("comments", null, contentValues);
 
-                        Log.e(TAG,i + "处理完毕");
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString("comment_id" + i,comment_id);
+                            editor.apply();
+
+                            Log.e(TAG,i + "处理完毕");
+                        }
+                        db.close();
+
+                        Message message = new Message();
+                        message.what = commentsArray.length();
+                        myHandler.sendMessage(message);
+
+                    } catch (IOException | JSONException e) {
+                        Message message = new Message();
+                        message.what = -1;
+                        myHandler.sendMessage(message);
+                        e.printStackTrace();
                     }
-                    db.close();
-
-                    Message message = new Message();
-                    message.what = commentsArray.length();
-                    myHandler.sendMessage(message);
-
-                } catch (IOException | JSONException e) {
-                    Message message = new Message();
-                    message.what = -1;
-                    myHandler.sendMessage(message);
-                    e.printStackTrace();
                 }
-            }
-        }).start();
+            }).start();
+        }
     }
 
     String getJSONFromAPI(String url) throws IOException {

@@ -15,6 +15,7 @@ import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.transition.TransitionInflater;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,7 +57,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     public static int page;
     public static int fragmentPosition;
 
-    protected MyRecyclerView recyclerView;
+    protected RecyclerView recyclerView;
     protected RecyclerViewAdapter myAdapter;
     protected RecyclerView.LayoutManager layoutManager;
     SharedPreferences sharedPreferences;
@@ -64,6 +65,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     MyHandler myHandler;
     SwipeRefreshLayout swipeRefreshLayout;
     String shotsUrl;
+    SQLiteDatabase db;
 
     OkHttpClient client = new OkHttpClient.Builder()
             .connectTimeout(25, TimeUnit.SECONDS)
@@ -87,13 +89,15 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
-
         final View rootView = inflater.inflate(R.layout.fragment_page,container,false);
+
+        getActivity().getWindow().setSharedElementExitTransition(TransitionInflater.from(getActivity()).inflateTransition(R.transition.shared_element_transition));
 
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(this);
@@ -108,7 +112,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 //            }
 //        });
 
-        recyclerView = (MyRecyclerView) rootView.findViewById(R.id.recycler_view);
+        recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
 
         layoutManager = new LinearLayoutManager(getActivity());
 
@@ -123,6 +127,9 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         recyclerView.setAdapter(slideInRightAnimationAdapter);
 
         myHandler = new MyHandler(this);
+
+        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,5);
+        db = myDatabaseHelper.getWritableDatabase();
 
         return rootView;
     }
@@ -310,9 +317,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                     String response = getJSONFromAPI(shotsUrl);
                     Log.e(TAG, response);
                     JSONArray shotsArray = new JSONArray(response);
-
-                    myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,5);
-                    SQLiteDatabase db = myDatabaseHelper.getWritableDatabase();
 
                     for (int i = 0;i < shotsArray.length();i++){
 
