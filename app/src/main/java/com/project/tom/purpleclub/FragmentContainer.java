@@ -1,5 +1,7 @@
 package com.project.tom.purpleclub;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -39,7 +41,7 @@ public class FragmentContainer extends Fragment {
 
         String drawerPosition = getArguments().getString("drawerPosition");
 
-        myPagerAdapter = new MyPagerAdapter(getChildFragmentManager(),drawerPosition);
+        myPagerAdapter = new MyPagerAdapter(getChildFragmentManager(),drawerPosition,this);
         viewPager.setAdapter(myPagerAdapter);
 
         viewPager.setOffscreenPageLimit(4);
@@ -53,11 +55,12 @@ public class FragmentContainer extends Fragment {
 }
 
 class MyPagerAdapter extends FragmentStatePagerAdapter{
-
     String drawerPosition;
+    FragmentContainer fragmentContainer;
 
-    public MyPagerAdapter(FragmentManager fm,String drawerPosition) {
+    public MyPagerAdapter(FragmentManager fm,String drawerPosition,FragmentContainer fragmentContainer) {
         super(fm);
+        this.fragmentContainer = fragmentContainer;
         this.drawerPosition = drawerPosition;
     }
 

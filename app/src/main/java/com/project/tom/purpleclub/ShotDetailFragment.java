@@ -120,26 +120,14 @@ public class ShotDetailFragment extends Fragment {
         titleTextView = (TextView) rootView.findViewById(R.id.shot_detail_title);
         descriptionTextView = (TextView) rootView.findViewById(R.id.shot_detail_description);
 
-        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,5);
+        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,6);
 
         db = myDatabaseHelper.getWritableDatabase();
         String[] projection = {"title","description","username","views_count","comments_count","likes_count","created_at","avatar_url","image_small_url","image_normal_url","image_big_url"};
 
         String[] args = new String[]{shot_id};
-        Cursor cursor_one = db.query("shots_popularity",projection,"shot_id=?",args,null,null,null);
-        Cursor cursor_two = db.query("shots_recent",projection,"shot_id=?",args,null,null,null);
-        Cursor cursor_three = db.query("shots_views",projection,"shot_id=?",args,null,null,null);
-        Cursor cursor_four = db.query("shots_comments",projection,"shot_id=?",args,null,null,null);
+        cursor = db.query("shots",projection,"shot_id=?",args,null,null,null);
 
-        if (cursor_one.moveToFirst()) {
-            cursor = cursor_one;
-        }else if (cursor_two.moveToFirst()){
-            cursor = cursor_two;
-        }else if (cursor_three.moveToFirst()){
-            cursor = cursor_three;
-        }else if (cursor_four.moveToFirst()){
-            cursor = cursor_four;
-        }
         if (cursor.moveToFirst()){
             do {
                 title = cursor.getString(cursor.getColumnIndex("title"));
@@ -157,10 +145,7 @@ public class ShotDetailFragment extends Fragment {
         }else {
             Log.e(TAG, "cursor为空");
         }
-        cursor_one.close();
-        cursor_two.close();
-        cursor_three.close();
-        cursor_four.close();
+
         cursor.close();
 
         if (!description.equals("null")){

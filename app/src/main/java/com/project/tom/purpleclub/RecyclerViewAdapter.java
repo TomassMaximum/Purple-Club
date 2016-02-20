@@ -125,132 +125,18 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
         final RecyclerHolder recyclerHolder = (RecyclerHolder) holder;
 
-        myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,5);
+        myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,6);
 
         db = myDatabaseHelper.getWritableDatabase();
-        String[] projection = {"id","drawer_position","shot_id","title","avatar_url","image_small_url","image_normal_url","views_count","comments_count","likes_count","created_at"};
+        String[] projection = {"id","drawer_position","page_position","shot_id","title","avatar_url","image_small_url","image_normal_url","views_count","comments_count","likes_count","created_at"};
 
-        switch (drawerPosition){
-            case "top":
-                switch (page){
-                    case 0:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"top"},null,null,"id DESC","12");
-                        break;
-                    case 1:
-                        cursor = db.query("shots_recent",projection,"drawer_position=?",new String[]{"top"},null,null,"id DESC","12");
-                        break;
-                    case 2:
-                        cursor = db.query("shots_views",projection,"drawer_position=?",new String[]{"top"},null,null,"id DESC","12");
-                        break;
-                    case 3:
-                        cursor = db.query("shots_comments",projection,"drawer_position=?",new String[]{"top"},null,null,"id DESC","12");
-                        break;
-                    default:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"top"},null,null,"id DESC","12");
-                        break;
-                }
-                break;
-            case "new_show":
-                switch (page){
-                    case 0:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"new_show"},null,null,"id DESC","12");
-                        break;
-                    case 1:
-                        cursor = db.query("shots_recent",projection,"drawer_position=?",new String[]{"new_show"},null,null,"id DESC","12");
-                        break;
-                    case 2:
-                        cursor = db.query("shots_views",projection,"drawer_position=?",new String[]{"new_show"},null,null,"id DESC","12");
-                        break;
-                    case 3:
-                        cursor = db.query("shots_comments",projection,"drawer_position=?",new String[]{"new_show"},null,null,"id DESC","12");
-                        break;
-                    default:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"new_show"},null,null,"id DESC","12");
-                        break;
-                }
-                break;
-            case "gif_animation":
-                switch (page){
-                    case 0:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"gif_animation"},null,null,"id DESC","12");
-                        break;
-                    case 1:
-                        cursor = db.query("shots_recent",projection,"drawer_position=?",new String[]{"gif_animation"},null,null,"id DESC","12");
-                        break;
-                    case 2:
-                        cursor = db.query("shots_views",projection,"drawer_position=?",new String[]{"gif_animation"},null,null,"id DESC","12");
-                        break;
-                    case 3:
-                        cursor = db.query("shots_comments",projection,"drawer_position=?",new String[]{"gif_animation"},null,null,"id DESC","12");
-                        break;
-                    default:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"gif_animation"},null,null,"id DESC","12");
-                        break;
-                }
-                break;
-            case "season_winner":
-                switch (page){
-                    case 0:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"season_winner"},null,null,"id DESC","12");
-                        break;
-                    case 1:
-                        cursor = db.query("shots_recent",projection,"drawer_position=?",new String[]{"season_winner"},null,null,"id DESC","12");
-                        break;
-                    case 2:
-                        cursor = db.query("shots_views",projection,"drawer_position=?",new String[]{"season_winner"},null,null,"id DESC","12");
-                        break;
-                    case 3:
-                        cursor = db.query("shots_comments",projection,"drawer_position=?",new String[]{"season_winner"},null,null,"id DESC","12");
-                        break;
-                    default:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"season_winner"},null,null,"id DESC","12");
-                        break;
-                }
-                break;
-            case "team_work":
-                switch (page){
-                    case 0:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"team_work"},null,null,"id DESC","12");
-                        break;
-                    case 1:
-                        cursor = db.query("shots_recent",projection,"drawer_position=?",new String[]{"team_work"},null,null,"id DESC","12");
-                        break;
-                    case 2:
-                        cursor = db.query("shots_views",projection,"drawer_position=?",new String[]{"team_work"},null,null,"id DESC","12");
-                        break;
-                    case 3:
-                        cursor = db.query("shots_comments",projection,"drawer_position=?",new String[]{"team_work"},null,null,"id DESC","12");
-                        break;
-                    default:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"team_work"},null,null,"id DESC","12");
-                        break;
-                }
-                break;
-            case "second_production":
-                switch (page){
-                    case 0:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"second_production"},null,null,"id DESC","12");
-                        break;
-                    case 1:
-                        cursor = db.query("shots_recent",projection,"drawer_position=?",new String[]{"second_production"},null,null,"id DESC","12");
-                        break;
-                    case 2:
-                        cursor = db.query("shots_views",projection,"drawer_position=?",new String[]{"second_production"},null,null,"id DESC","12");
-                        break;
-                    case 3:
-                        cursor = db.query("shots_comments",projection,"drawer_position=?",new String[]{"second_production"},null,null,"id DESC","12");
-                        break;
-                    default:
-                        cursor = db.query("shots_popularity",projection,"drawer_position=?",new String[]{"second_production"},null,null,"id DESC","12");
-                        break;
-                }
-                break;
-        }
+        cursor = db.query("shots",projection,"drawer_position=? and page_position=?",new String[]{drawerPosition,Integer.toString(page)},null,null,"id DESC","12");
 
+        Log.e(TAG,drawerPosition + "+" + page);
         if (cursor.moveToFirst()){
             cursor.moveToPosition(position);
-
-            final String id = cursor.getString(cursor.getColumnIndex("id"));
+            Log.e(TAG,position + "");
+            //final String id = cursor.getString(cursor.getColumnIndex("id"));
 
             final String shot_id = cursor.getString(cursor.getColumnIndex("shot_id"));
             final String avatar_url = cursor.getString(cursor.getColumnIndex("avatar_url"));
@@ -262,17 +148,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             final String likes_count = cursor.getString(cursor.getColumnIndex("likes_count"));
             final String created_at = cursor.getString(cursor.getColumnIndex("created_at"));
 
-//            try {
-//                Bitmap avatar = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("avatar" + shot_id + ".png"));
-//                Drawable roundAvatarDrawable = new RoundImage(avatar);
-//                recyclerHolder.avatarImageView.setImageDrawable(roundAvatarDrawable);
-//
-//                Bitmap image_small = BitmapFactory.decodeStream(fragmentPage.getActivity().openFileInput("image_small" + shot_id + ".png"));
-//                recyclerHolder.pictureImageView.setImageBitmap(image_small);
-//            } catch (FileNotFoundException e) {
-//                e.printStackTrace();
-//            }
-
             final SharedPreferences sharedPreferences = fragmentPage.getActivity().getSharedPreferences("NerdPool", Context.MODE_PRIVATE);
             final String access_token = sharedPreferences.getString("access_token","");
 
@@ -280,7 +155,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             recyclerHolder.viewsCountTextView.setText(views_count);
             recyclerHolder.commentsCountTextView.setText(comments_count);
             recyclerHolder.likesCountTextView.setText(likes_count);
-
 
             if (image_normal_url != null){
                 finalImageUrl = image_normal_url;
@@ -290,7 +164,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
 
             imageLoader.displayImage(finalImageUrl, recyclerHolder.pictureImageView, optionsPicture, animateFirstListener);
             imageLoader.displayImage(avatar_url, recyclerHolder.avatarImageView, optionsAvatar, animateFirstListener);
-
 
             boolean liked = sharedPreferences.getBoolean(shot_id + "liked",false);
             if (!liked){
@@ -361,7 +234,23 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
 
     @Override
     public int getItemCount() {
-        return 12;
+        myDatabaseHelper = new MyDatabaseHelper(fragmentPage.getContext(),"shots.db",null,6);
+        db = myDatabaseHelper.getWritableDatabase();
+        Cursor cursor = db.query("shots",new String[]{"id"},"drawer_position=? and page_position=?",new String[]{drawerPosition,page + ""},null,null,null);
+        int i = 0;
+        if (cursor.moveToFirst()){
+            do {
+                i++;
+            }while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+
+        if (i >= 12){
+            return 12;
+        }else {
+            return i-1;
+        }
     }
 
     private static class AnimateFirstDisplayListener extends SimpleImageLoadingListener {

@@ -20,7 +20,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.transition.Transition;
 import android.transition.TransitionInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -67,10 +66,7 @@ public class DrawerActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drawer);
 
-        Transition transition = TransitionInflater.from(this).inflateTransition(R.transition.shared_element_transition);
-        transition.excludeTarget(R.id.toolbar,true);
-        transition.excludeTarget(R.id.tab_layout,true);
-        getWindow().setSharedElementExitTransition(transition);
+        getWindow().setSharedElementExitTransition(TransitionInflater.from(this).inflateTransition(R.transition.shared_element_transition));
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -173,7 +169,7 @@ public class DrawerActivity extends AppCompatActivity
                         v.setTransitionName("user_avatar");
                         ActivityOptionsCompat activityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(drawerActivity,v,v.getTransitionName());
 
-                        startActivity(new Intent(DrawerActivity.this, PersonalInfoActivity.class), activityOptionsCompat.toBundle());
+                        startActivity(new Intent(DrawerActivity.this, PersonalInfoActivity.class),activityOptionsCompat.toBundle());
                     }
                 });
 

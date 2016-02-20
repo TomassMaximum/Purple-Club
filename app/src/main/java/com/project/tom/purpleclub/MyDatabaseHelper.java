@@ -9,16 +9,10 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class MyDatabaseHelper extends SQLiteOpenHelper {
 
-    public static final String POPULARITY_SHOTS = "shots_popularity";
-    public static final String RECENT_SHOTS = "shots_recent";
-    public static final String VIEWS_SHOTS = "shots_views";
-    public static final String COMMENTS_SHOTS = "shots_comments";
-
-    public static final String CREATE = "create table ";
-
-    public static final String CREATE_SHOTS = " ("
+    public static final String CREATE_SHOTS = "create table shots ("
             + "id integer primary key autoincrement, "
             + "drawer_position text, "
+            + "page_position text, "
             + "shot_id text, "
             + "title text, "
             + "description text, "
@@ -91,19 +85,13 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(CREATE + POPULARITY_SHOTS + CREATE_SHOTS);
-        db.execSQL(CREATE + RECENT_SHOTS + CREATE_SHOTS);
-        db.execSQL(CREATE + VIEWS_SHOTS + CREATE_SHOTS);
-        db.execSQL(CREATE + COMMENTS_SHOTS + CREATE_SHOTS);
+        db.execSQL(CREATE_SHOTS);
         db.execSQL(COMMENTS_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("drop table if exists " + POPULARITY_SHOTS);
-        db.execSQL("drop table if exists " + RECENT_SHOTS);
-        db.execSQL("drop table if exists " + VIEWS_SHOTS);
-        db.execSQL("drop table if exists " + COMMENTS_SHOTS);
+        db.execSQL("drop table if exists " + "shots");
         db.execSQL("drop table if exists " + "comments");
         onCreate(db);
 

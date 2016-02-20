@@ -103,15 +103,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         swipeRefreshLayout.setOnRefreshListener(this);
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
 
-//        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-//            @Override
-//            public void onGlobalLayout() {
-//                rootView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-//                swipeRefreshLayout.setRefreshing(true);
-//                onRefresh();
-//            }
-//        });
-
         recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
 
         layoutManager = new LinearLayoutManager(getActivity());
@@ -120,16 +111,28 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
 
         String drawerPosition = getArguments().getString("drawerPosition");
         int position = getArguments().getInt("position");
-        Log.e(TAG,"位置为：" + position);
-        myAdapter = new RecyclerViewAdapter(this,position,drawerPosition);
-        SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(myAdapter);
-        slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
-        recyclerView.setAdapter(slideInRightAnimationAdapter);
 
-        myHandler = new MyHandler(this);
-
-        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,5);
+        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,6);
         db = myDatabaseHelper.getWritableDatabase();
+        Cursor cursor = db.query("shots", new String[]{"id"}, "drawer_position=? and page_position=?", new String[]{drawerPosition,Integer.toString(position)},null,null,null);
+        if (cursor.moveToFirst()){
+            Log.e(TAG, "位置为：" + position);
+            myAdapter = new RecyclerViewAdapter(this,position,drawerPosition);
+            SlideInRightAnimationAdapter slideInRightAnimationAdapter = new SlideInRightAnimationAdapter(myAdapter);
+            slideInRightAnimationAdapter.setInterpolator(new LinearOutSlowInInterpolator());
+            recyclerView.setAdapter(slideInRightAnimationAdapter);
+        }else {
+            rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    rootView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                    swipeRefreshLayout.setRefreshing(true);
+                    onRefresh();
+                }
+            });
+        }
+        db.close();
+        myHandler = new MyHandler(this);
 
         return rootView;
     }
@@ -151,22 +154,18 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         case 0:
                             //当前碎片为Popularity最受关注时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token;
-                            tableName = POPULARITY_SHOTS;
                             break;
                         case 1:
                             //当前碎片为Recent最新发布十：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.SORT_RECENT;
-                            tableName = RECENT_SHOTS;
                             break;
                         case 2:
                             //当前碎片为Views最受欣赏时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.SORT_VIEWS;
-                            tableName = VIEWS_SHOTS;
                             break;
                         case 3:
                             //当前碎片为comments最受议论时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.SORT_COMMENTS;
-                            tableName = COMMENTS_SHOTS;
                             break;
                         default:
                             break;
@@ -178,22 +177,18 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         case 0:
                             //当前碎片为Popularity最受关注时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW;
-                            tableName = POPULARITY_SHOTS;
                             break;
                         case 1:
                             //当前碎片为Recent最新发布十：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW + Contract.SORT_RECENT;
-                            tableName = RECENT_SHOTS;
                             break;
                         case 2:
                             //当前碎片为Views最受欣赏时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW + Contract.SORT_VIEWS;
-                            tableName = VIEWS_SHOTS;
                             break;
                         case 3:
                             //当前碎片为comments最受议论时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_NEW_SHOW + Contract.SORT_COMMENTS;
-                            tableName = COMMENTS_SHOTS;
                             break;
                         default:
                             break;
@@ -204,22 +199,18 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         case 0:
                             //当前碎片为Popularity最受关注时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED;
-                            tableName = POPULARITY_SHOTS;
                             break;
                         case 1:
                             //当前碎片为Recent最新发布十：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED + Contract.SORT_RECENT;
-                            tableName = RECENT_SHOTS;
                             break;
                         case 2:
                             //当前碎片为Views最受欣赏时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED + Contract.SORT_VIEWS;
-                            tableName = VIEWS_SHOTS;
                             break;
                         case 3:
                             //当前碎片为comments最受议论时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_GIF_ANIMATED + Contract.SORT_COMMENTS;
-                            tableName = COMMENTS_SHOTS;
                             break;
                         default:
                             break;
@@ -230,22 +221,18 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         case 0:
                             //当前碎片为Popularity最受关注时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON;
-                            tableName = POPULARITY_SHOTS;
                             break;
                         case 1:
                             //当前碎片为Recent最新发布十：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON + Contract.SORT_RECENT;
-                            tableName = RECENT_SHOTS;
                             break;
                         case 2:
                             //当前碎片为Views最受欣赏时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON + Contract.SORT_VIEWS;
-                            tableName = VIEWS_SHOTS;
                             break;
                         case 3:
                             //当前碎片为comments最受议论时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SEASON + Contract.SORT_COMMENTS;
-                            tableName = COMMENTS_SHOTS;
                             break;
                         default:
                             break;
@@ -256,22 +243,18 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         case 0:
                             //当前碎片为Popularity最受关注时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS;
-                            tableName = POPULARITY_SHOTS;
                             break;
                         case 1:
                             //当前碎片为Recent最新发布十：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS + Contract.SORT_RECENT;
-                            tableName = RECENT_SHOTS;
                             break;
                         case 2:
                             //当前碎片为Views最受欣赏时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS + Contract.SORT_VIEWS;
-                            tableName = VIEWS_SHOTS;
                             break;
                         case 3:
                             //当前碎片为comments最受议论时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_TEAMS + Contract.SORT_COMMENTS;
-                            tableName = COMMENTS_SHOTS;
                             break;
                         default:
                             break;
@@ -282,22 +265,18 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         case 0:
                             //当前碎片为Popularity最受关注时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION;
-                            tableName = POPULARITY_SHOTS;
                             break;
                         case 1:
                             //当前碎片为Recent最新发布十：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION + Contract.SORT_RECENT;
-                            tableName = RECENT_SHOTS;
                             break;
                         case 2:
                             //当前碎片为Views最受欣赏时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION + Contract.SORT_VIEWS;
-                            tableName = VIEWS_SHOTS;
                             break;
                         case 3:
                             //当前碎片为comments最受议论时：
                             shotsUrl = Contract.DRIBBBLE_GET_SHOTS + Contract.ACCESS_TOKEN + access_token + Contract.LIST_SECOND_PRODUCTION + Contract.SORT_COMMENTS;
-                            tableName = COMMENTS_SHOTS;
                             break;
                         default:
                             break;
@@ -309,6 +288,9 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
         }
 
         Log.e(TAG, shotsUrl);
+        myDatabaseHelper = new MyDatabaseHelper(getActivity(),"shots.db",null,6);
+        db = myDatabaseHelper.getWritableDatabase();
+        db.delete("shots","drawer_position=? and page_position=?",new String[]{drawerPosition,page + ""});
 
         new Thread(new Runnable() {
             @Override
@@ -396,6 +378,7 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         //创建ContentValues组装解析出来的数据
                         ContentValues values = new ContentValues();
                         values.put("drawer_position",drawerPosition);
+                        values.put("page_position", page);
                         values.put("shot_id",shot_id);
                         values.put("title",title);
                         values.put("description",description);
@@ -432,9 +415,10 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                         values.put("can_upload_shot",can_upload_shot);
                         values.put("type", type);
                         values.put("pro", pro);
+                        Log.e(TAG, "第" + i + "组数据添加完毕" + drawerPosition + page);
 
-                        db.insert(tableName,null,values);
-                        db.update(tableName, values, "shot_id=?", new String[]{shot_id});
+                        db.insert("shots",null,values);
+
                     }
                     db.close();
 
@@ -447,7 +431,6 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
                     Message message = new Message();
                     message.what = -1;
                     myHandler.sendMessage(message);
-                    //Toast.makeText(getActivity(), "请求数据出错，请重试", Toast.LENGTH_SHORT).show();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -469,11 +452,12 @@ public class FragmentPage extends Fragment implements SwipeRefreshLayout.OnRefre
             this.fragmentPage = fragmentPage;
         }
         int success;
+        String drawerPosition;
 
         @Override
         public void handleMessage(Message msg) {
             page = getArguments().getInt("position");
-            String drawerPosition = getArguments().getString("drawerPosition");
+            drawerPosition = getArguments().getString("drawerPosition");
 
             success = msg.what;
             if (success != -1){
