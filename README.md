@@ -28,6 +28,8 @@ RecyclerView Animator
   主页面CardView最后一个项目显示不完全。
   
 应用GIF Demo：
+
+
 ![image](https://github.com/TomassMaximum/Purple-Club/raw/master/Demo/基础操作逻辑.gif)
 ![image](https://github.com/TomassMaximum/Purple-Club/raw/master/Demo/详情及评论.gif)
 ![image](https://github.com/TomassMaximum/Purple-Club/raw/master/Demo/个人信息.gif)
