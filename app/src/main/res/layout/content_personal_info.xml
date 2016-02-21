@@ -17,10 +17,14 @@
         <ImageView
             android:transitionName="user_avatar"
             android:layout_marginTop="8dp"
-            android:layout_marginLeft="8dp"
+            android:layout_marginStart="8dp"
             android:id="@+id/user_avatar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:maxHeight="60dp"
+            android:maxWidth="60dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp" />
 
         <LinearLayout
             android:layout_marginTop="16dp"
@@ -63,18 +67,21 @@
                 android:layout_height="wrap_content">
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/user_name"
                     android:layout_marginTop="8dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/id"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:singleLine="true"
                     android:id="@+id/html"
                     android:layout_marginTop="16dp"
@@ -140,24 +147,28 @@
                 android:layout_height="wrap_content">
 
                 <TextView
+                    android:text="加载中..."
                     android:gravity="center_horizontal"
                     android:id="@+id/name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/location"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/bio"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:singleLine="true"
                     android:id="@+id/web"
                     android:layout_marginTop="16dp"
@@ -165,6 +176,7 @@
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:singleLine="true"
                     android:id="@+id/twitter"
                     android:layout_marginTop="16dp"
@@ -248,48 +260,56 @@
                 android:layout_height="wrap_content">
 
                 <TextView
+                    android:text="加载中..."
                     android:gravity="center_horizontal"
                     android:id="@+id/followings_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/followers_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/buckets_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/projects_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/rebounds_received_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/comments_received_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/likes_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/likes_received_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
@@ -354,30 +374,35 @@
                 android:layout_height="wrap_content">
 
                 <TextView
+                    android:text="加载中..."
                     android:gravity="center_horizontal"
                     android:id="@+id/shots_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/can_upload_shot"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/teams_count"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/type"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:text="加载中..."
                     android:id="@+id/pro"
                     android:layout_marginTop="16dp"
                     android:layout_width="wrap_content"

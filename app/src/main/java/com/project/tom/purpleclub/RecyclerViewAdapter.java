@@ -65,8 +65,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         this.page = page;
         this.drawerPosition = drawerPosition;
 
-        imageLoader.init(ImageLoaderConfiguration.createDefault(fragmentPage.getContext()));
-
         optionsAvatar = new DisplayImageOptions.Builder()
                 .cacheInMemory(true)
                 .cacheOnDisk(true)
@@ -161,6 +159,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
             }else {
                 finalImageUrl = image_small_url;
             }
+
+            imageLoader.init(ImageLoaderConfiguration.createDefault(fragmentPage.getContext()));
 
             imageLoader.displayImage(finalImageUrl, recyclerHolder.pictureImageView, optionsPicture, animateFirstListener);
             imageLoader.displayImage(avatar_url, recyclerHolder.avatarImageView, optionsAvatar, animateFirstListener);

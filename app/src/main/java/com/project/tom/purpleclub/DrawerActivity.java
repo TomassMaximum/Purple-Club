@@ -1,19 +1,14 @@
 package com.project.tom.purpleclub;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -27,39 +22,26 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.display.CircleBitmapDisplayer;
+import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "DrawerActivity";
     SharedPreferences preferences;
-    RoundImage roundImage;
-    public static final int UPDATE_DRAWER = 1;
-    public static final int UPDATE_AVATAR = 2;
-
-    MyDatabaseHelper myDatabaseHelper;
-    SQLiteDatabase db;
-
     ImageView userAvatarImageView;
     TextView userName;
     TextView userDescription;
-    Fragment fragment;
-
-    private Handler handler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what){
-                case UPDATE_DRAWER:
-                    userAvatarImageView.setImageDrawable(roundImage);
-                    break;
-                case UPDATE_AVATAR:
-                    userAvatarImageView.setImageDrawable(roundImage);
-                default:
-                    break;
-            }
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +77,8 @@ public class DrawerActivity extends AppCompatActivity
     private class DrawerToggle extends ActionBarDrawerToggle{
 
         DrawerActivity drawerActivity;
+        ImageLoader imageLoader;
+        DisplayImageOptions displayImageOptions;
 
         public DrawerToggle(DrawerActivity activity, DrawerLayout drawerLayout, Toolbar toolbar, int openDrawerContentDescRes, int closeDrawerContentDescRes) {
             super(activity, drawerLayout, toolbar, openDrawerContentDescRes, closeDrawerContentDescRes);
@@ -113,19 +97,28 @@ public class DrawerActivity extends AppCompatActivity
             //如果用户未登录，显示Dribbble的默认头像，点击引导用户进入登录界面进行授权
             preferences = getSharedPreferences("NerdPool", MODE_PRIVATE);
             Boolean signedIn = preferences.getBoolean("SignedIn",false);
+            final String user_avatar_url = preferences.getString("user_avatar_url", "");
+            final String username = preferences.getString("username", "未登录");
+            final String html = preferences.getString("html_url", "点击登录");
+
+            userName.setText(username);
+            userDescription.setText(html);
+
+            imageLoader = ImageLoader.getInstance();
+            if (imageLoader.isInited()){
+                imageLoader.destroy();
+            }
+            imageLoader.init(ImageLoaderConfiguration.createDefault(drawerActivity));
+            displayImageOptions = new DisplayImageOptions.Builder()
+                    .showImageForEmptyUri(R.drawable.dribbble_default_avatar)
+                    .showImageOnFail(R.drawable.dribbble_default_avatar)
+                    .cacheInMemory(true)
+                    .cacheOnDisk(true)
+                    .displayer(new CircleBitmapDisplayer(Color.WHITE,5))
+                    .build();
+            imageLoader.displayImage(user_avatar_url, userAvatarImageView,displayImageOptions,new AnimateFirstDisplayListener());
 
             if (!signedIn){
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Bitmap userAvatar = Utils.getResizedBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.dribbble_default_avatar),180,180);
-                        roundImage = new RoundImage(userAvatar);
-                        Message message = new Message();
-                        message.what = UPDATE_DRAWER;
-                        handler.sendMessage(message);
-                    }
-                }).start();
-
                 userDescription.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -149,20 +142,6 @@ public class DrawerActivity extends AppCompatActivity
                 });
 
             }else {
-                String name = preferences.getString("username","");
-                String html = preferences.getString("html_url","");
-                userName.setText(name);
-                userDescription.setText(html);
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        setLocalAvatar();
-                        Message message = new Message();
-                        message.what = UPDATE_AVATAR;
-                        handler.sendMessage(message);
-                    }
-                }).start();
-
                 userAvatarImageView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -176,7 +155,10 @@ public class DrawerActivity extends AppCompatActivity
                 userName.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        startActivity(new Intent(DrawerActivity.this,PersonalInfoActivity.class));
+                        userAvatarImageView.setTransitionName("user_avatar");
+                        ActivityOptionsCompat activityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(drawerActivity,userAvatarImageView,userAvatarImageView.getTransitionName());
+
+                        startActivity(new Intent(DrawerActivity.this, PersonalInfoActivity.class),activityOptionsCompat.toBundle());
                     }
                 });
 
@@ -195,6 +177,7 @@ public class DrawerActivity extends AppCompatActivity
         @Override
         public void onDrawerClosed(View drawerView) {
             super.onDrawerClosed(drawerView);
+            imageLoader.destroy();
         }
     }
 
@@ -298,17 +281,20 @@ public class DrawerActivity extends AppCompatActivity
         return true;
     }
 
-    public void setLocalAvatar(){
-        String avatarLocalUrl = preferences.getString("avatarLocalUrl", "");
-        Uri avatarUri = Uri.parse(avatarLocalUrl);
-        Bitmap localAvatar = null;
-        try {
-            localAvatar = MediaStore.Images.Media.getBitmap(getContentResolver(),avatarUri);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (localAvatar != null){
-            roundImage = new RoundImage(localAvatar);
+    private static class AnimateFirstDisplayListener extends SimpleImageLoadingListener {
+
+        static final List<String> displayedImages = Collections.synchronizedList(new LinkedList<String>());
+
+        @Override
+        public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+            if (loadedImage != null) {
+                ImageView imageView = (ImageView) view;
+                boolean firstDisplay = !displayedImages.contains(imageUri);
+                if (firstDisplay) {
+                    FadeInBitmapDisplayer.animate(imageView, 500);
+                    displayedImages.add(imageUri);
+                }
+            }
         }
     }
 }

@@ -100,7 +100,7 @@ public class AuthorizationActivity extends Activity {
                                 String accessToken = contract.getAccessToken();
 
                                 //开启一个服务用于在此Activity结束后继续向Dribbble获取用户个人信息
-                                Intent intent = new Intent(authorizationActivity,RequestService.class);
+                                Intent intent = new Intent(authorizationActivity,LoginService.class);
                                 intent.putExtra("access_token",accessToken);
                                 Log.e(TAG,accessToken);
                                 authorizationActivity.startService(intent);
@@ -115,10 +115,6 @@ public class AuthorizationActivity extends Activity {
                         }
                 );
                 requestQueue.add(jsonObjectRequest);
-
-                //解决方案一：finish自己之前先开启Drawer Activity，但是要把模式改为SingleTop
-//                Intent intent = new Intent(authorizationActivity,DrawerActivity.class);
-//                authorizationActivity.startActivity(intent);
                 //获取到code并传递给Drawer Activity后关闭当前Activity
                 authorizationActivity.finish();
             }

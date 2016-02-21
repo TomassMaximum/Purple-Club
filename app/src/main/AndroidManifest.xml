@@ -29,7 +29,7 @@
             android:label="个人信息"
             android:theme="@style/AppTheme.NoActionBar" />
 
-        <service android:name=".RequestService" />
+        <service android:name=".LoginService" />
 
         <activity android:name=".ShotDetailActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
