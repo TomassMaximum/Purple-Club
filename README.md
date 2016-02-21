@@ -30,7 +30,7 @@
 ###视频Demo：
 　　[优酷链接](http://v.youku.com/v_show/id_XMTQ3NzYzNzI4NA==.html?from=y1.7-1.2)
    
-###应用GIF Demo：
+###GIF Demo：
    
    
 ![image](https://github.com/TomassMaximum/Purple-Club/raw/master/Demo/基础操作逻辑.gif)    
