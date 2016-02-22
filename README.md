@@ -28,7 +28,8 @@
 　　主页面CardView最后一个项目显示不完全。   
 　　  
 ###视频Demo：
-　　[优酷链接](http://v.youku.com/v_show/id_XMTQ3NzYzNzI4NA==.html?from=y1.7-1.2)
+　　[优酷链接](http://v.youku.com/v_show/id_XMTQ3NzYzNzI4NA==.html?from=y1.7-1.2)  
+　　[Youtube](https://www.youtube.com/watch?v=ZVcq_eFMxfc&feature=youtu.be)
    
 ###GIF Demo：
    
