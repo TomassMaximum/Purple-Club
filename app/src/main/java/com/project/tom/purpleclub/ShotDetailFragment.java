@@ -208,7 +208,7 @@ public class ShotDetailFragment extends Fragment {
         optionsImage = new DisplayImageOptions.Builder()
                 .cacheOnDisk(true)
                 .imageScaleType(ImageScaleType.EXACTLY)
-                .displayer(new FadeInBitmapDisplayer(3000))
+                //.displayer(new FadeInBitmapDisplayer(3000))
                 .build();
 
         optionsAvatar = new DisplayImageOptions.Builder()
@@ -224,6 +224,8 @@ public class ShotDetailFragment extends Fragment {
         }else{
             image_url = image_small_url;
         }
+
+        //imageLoader.displayImage(image_normal_url, pictureImageView, optionsImage, animateFirstDisplayListener);
 
         imageLoader.displayImage(avatar_url, avatarImageView,optionsAvatar,animateFirstDisplayListener);
         imageLoader.displayImage(image_url, pictureImageView, optionsImage, animateFirstDisplayListener);
