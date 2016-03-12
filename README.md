@@ -25,7 +25,6 @@
 　　作品与用户头像未设置默认图片，由于Recycler View复用元素的特性，滑动过快有一定概率会导致图片显示错位，等待图片加载完毕即可。  
 　　主页面作品图片到详情页面的“Shared Element Transition”动画没有效果，返回正常。   
 　　初次加载数据失败时没有提示信息。   
-　　主页面CardView最后一个项目显示不完全。   
 　　  
 ###视频Demo：
 　　[优酷链接](http://v.youku.com/v_show/id_XMTQ3NzYzNzI4NA==.html?from=y1.7-1.2)  
